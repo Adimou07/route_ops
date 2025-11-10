@@ -10,7 +10,9 @@ import {
   FileStack, 
   UserCog, 
   Settings,
-  LogOut
+  LogOut,
+  Factory,
+  Receipt
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -40,11 +42,13 @@ const supplyChainItems = [
   { title: "RFQ", url: "/rfq", icon: FileText },
   { title: "Commandes Clients", url: "/sales-orders", icon: ShoppingCart },
   { title: "Commandes Fournisseurs", url: "/purchase-orders", icon: Package },
+  { title: "Factures", url: "/invoices", icon: Receipt },
 ];
 
 const contactsItems = [
   { title: "Clients", url: "/customers", icon: Users },
   { title: "Fournisseurs", url: "/suppliers", icon: Building2 },
+  { title: "Fabricants", url: "/manufacturers", icon: Factory },
 ];
 
 const adminItems = [
