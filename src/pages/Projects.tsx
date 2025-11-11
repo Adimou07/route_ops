@@ -18,12 +18,27 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { KanbanColumn } from "@/components/projects/KanbanColumn";
+import { ProjectCard } from "@/components/projects/ProjectCard";
 
 const Projects = () => {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  
-  const projects = [
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [projectsData, setProjectsData] = useState([
     { 
       id: "PROJ-00123", 
       name: "Installation Réseau Client A", 
@@ -102,7 +117,48 @@ const Projects = () => {
       description: "Programme de formation continue",
       manager: "Anne Petit"
     },
-  ];
+  ]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over) {
+      setActiveId(null);
+      return;
+    }
+
+    const activeProject = projectsData.find(p => p.id === active.id);
+    const newStatus = over.id as string;
+
+    if (activeProject && activeProject.status !== newStatus) {
+      setProjectsData(prev => 
+        prev.map(project => 
+          project.id === active.id 
+            ? { ...project, status: newStatus }
+            : project
+        )
+      );
+    }
+
+    setActiveId(null);
+  };
+
+  const handleViewProject = (projectId: string) => {
+    navigate(`/projects/${projectId}`);
+  };
+
+  const projects = projectsData;
 
   const stats = [
     { label: "Total Projets", value: "24", icon: FolderOpen, color: "primary" },
@@ -357,7 +413,7 @@ const Projects = () => {
                         <TableCell className="font-semibold">{project.budget}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="sm">
@@ -374,73 +430,35 @@ const Projects = () => {
                 </Table>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {Object.entries(kanbanColumns).map(([status, projectsList]) => (
-                  <div key={status} className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <h3 className="font-semibold text-sm">{status}</h3>
-                      <Badge variant="secondary">{projectsList.length}</Badge>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {Object.entries(kanbanColumns).map(([status, projectsList]) => (
+                    <KanbanColumn
+                      key={status}
+                      status={status}
+                      projects={projectsList}
+                      getPriorityColor={getPriorityColor}
+                      onViewProject={handleViewProject}
+                    />
+                  ))}
+                </div>
+                <DragOverlay>
+                  {activeId ? (
+                    <div className="opacity-50">
+                      <ProjectCard
+                        project={projects.find(p => p.id === activeId)!}
+                        getPriorityColor={getPriorityColor}
+                        onViewProject={handleViewProject}
+                      />
                     </div>
-                    <div className="space-y-3 min-h-[400px]">
-                      {projectsList.map((project) => (
-                        <Card key={project.id} className="cursor-pointer hover:shadow-md transition-all group">
-                          <CardContent className="p-4 space-y-3">
-                            <div className="flex items-start justify-between">
-                              <span className="text-xs font-mono text-muted-foreground">{project.id}</span>
-                              <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getPriorityColor(project.priority)}`}>
-                                {project.priority}
-                              </span>
-                            </div>
-                            <h4 className="font-semibold text-sm leading-tight line-clamp-2">{project.name}</h4>
-                            <p className="text-xs text-muted-foreground line-clamp-2">{project.description}</p>
-                            <div className="space-y-2 pt-2 border-t">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Client:</span>
-                                <span className="font-medium">{project.client}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Manager:</span>
-                                <span className="font-medium">{project.manager}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Budget:</span>
-                                <span className="font-semibold">{project.budget}</span>
-                              </div>
-                            </div>
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">Progression</span>
-                                <span className="font-medium">{project.progress}%</span>
-                              </div>
-                              <div className="w-full bg-secondary rounded-full h-1.5">
-                                <div 
-                                  className="bg-primary h-1.5 rounded-full transition-all"
-                                  style={{ width: `${project.progress}%` }}
-                                />
-                              </div>
-                            </div>
-                            <div className="flex gap-1 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button variant="ghost" size="sm" className="h-8 w-full">
-                                <Eye className="h-3 w-3 mr-1" />
-                                Voir
-                              </Button>
-                              <Button variant="ghost" size="sm" className="h-8 w-full">
-                                <Edit className="h-3 w-3 mr-1" />
-                                Modifier
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      {projectsList.length === 0 && (
-                        <div className="flex items-center justify-center h-32 border-2 border-dashed rounded-lg">
-                          <p className="text-sm text-muted-foreground">Aucun projet</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ) : null}
+                </DragOverlay>
+              </DndContext>
             )}
           </CardContent>
         </Card>
