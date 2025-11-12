@@ -19,14 +19,14 @@ interface Project {
 }
 
 interface ProjectCardProps {
-  project: Project;
+  project: any;
   getPriorityColor: (priority: string) => string;
-  onViewProject: (id: string) => void;
+  onViewProject: (id: string | number) => void;
 }
 
 export const ProjectCard = ({ project, getPriorityColor, onViewProject }: ProjectCardProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: project.id,
+    id: project.id.toString(),
   });
 
   const style = {
@@ -49,20 +49,16 @@ export const ProjectCard = ({ project, getPriorityColor, onViewProject }: Projec
             {project.priority}
           </span>
         </div>
-        <h4 className="font-semibold text-sm leading-tight line-clamp-2">{project.name}</h4>
+        <h4 className="font-semibold text-sm leading-tight line-clamp-2">{project.title || project.name}</h4>
         <p className="text-xs text-muted-foreground line-clamp-2">{project.description}</p>
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Client:</span>
-            <span className="font-medium">{project.client}</span>
-          </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Manager:</span>
-            <span className="font-medium">{project.manager}</span>
+            <span className="font-medium">{project.customer?.name || project.client || 'N/A'}</span>
           </div>
           <div className="flex items-center justify-between text-xs">
             <span className="text-muted-foreground">Budget:</span>
-            <span className="font-semibold">{project.budget}</span>
+            <span className="font-semibold">{project.budget?.toLocaleString?.() || project.budget} €</span>
           </div>
         </div>
         <div className="space-y-1">

@@ -12,13 +12,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { projectsApi, customersApi } from "@/services/api";
+import { LoadingState } from "@/components/ui/loading-spinner";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   DndContext,
   DragEndEvent,
@@ -27,97 +30,50 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  closestCorners,
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import { KanbanColumn } from "@/components/projects/KanbanColumn";
 import { ProjectCard } from "@/components/projects/ProjectCard";
+import { Progress } from "@/components/ui/progress";
 
 const Projects = () => {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"table" | "kanban">("kanban");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [projectsData, setProjectsData] = useState([
-    { 
-      id: "PROJ-00123", 
-      name: "Installation Réseau Client A", 
-      client: "Entreprise Alpha", 
-      status: "En cours", 
-      priority: "Haute",
-      progress: 65, 
-      budget: "75 000€",
-      startDate: "15/03/2024",
-      endDate: "30/06/2024",
-      description: "Installation complète du réseau informatique",
-      manager: "Jean Dupont"
-    },
-    { 
-      id: "PROJ-00124", 
-      name: "Migration Datacenter B", 
-      client: "Société Beta", 
-      status: "En attente", 
-      priority: "Moyenne",
-      progress: 30, 
-      budget: "125 000€",
-      startDate: "22/03/2024",
-      endDate: "15/07/2024",
-      description: "Migration des serveurs vers nouveau datacenter",
-      manager: "Marie Martin"
-    },
-    { 
-      id: "PROJ-00125", 
-      name: "Déploiement Serveurs C", 
-      client: "Client Gamma", 
-      status: "Terminé", 
-      priority: "Basse",
-      progress: 100, 
-      budget: "45 000€",
-      startDate: "05/04/2024",
-      endDate: "20/05/2024",
-      description: "Déploiement de nouveaux serveurs",
-      manager: "Pierre Dubois"
-    },
-    { 
-      id: "PROJ-00126", 
-      name: "Audit Sécurité D", 
-      client: "Entreprise Delta", 
-      status: "En cours", 
-      priority: "Haute",
-      progress: 45, 
-      budget: "32 000€",
-      startDate: "10/04/2024",
-      endDate: "25/06/2024",
-      description: "Audit complet de sécurité informatique",
-      manager: "Sophie Bernard"
-    },
-    { 
-      id: "PROJ-00127", 
-      name: "Mise à jour Infrastructure", 
-      client: "Entreprise Epsilon", 
-      status: "Planifié", 
-      priority: "Moyenne",
-      progress: 10, 
-      budget: "89 000€",
-      startDate: "01/05/2024",
-      endDate: "30/08/2024",
-      description: "Modernisation infrastructure IT",
-      manager: "Luc Leroy"
-    },
-    { 
-      id: "PROJ-00128", 
-      name: "Formation Équipe IT", 
-      client: "Groupe Zeta", 
-      status: "En cours", 
-      priority: "Basse",
-      progress: 55, 
-      budget: "18 000€",
-      startDate: "12/04/2024",
-      endDate: "15/06/2024",
-      description: "Programme de formation continue",
-      manager: "Anne Petit"
-    },
-  ]);
+  const [projectsData, setProjectsData] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+
+  // Fetch projects and customers
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const [projectsResponse, customersResponse] = await Promise.all([
+          projectsApi.getAll(),
+          customersApi.getAll()
+        ]);
+        setProjectsData(projectsResponse);
+        setCustomers(customersResponse);
+      } catch (err: any) {
+        setError(err.message || "Erreur lors du chargement des projets");
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les projets. Vérifiez que le serveur est démarré.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -126,11 +82,12 @@ const Projects = () => {
       },
     })
   );
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (!over) {
@@ -138,60 +95,146 @@ const Projects = () => {
       return;
     }
 
-    const activeProject = projectsData.find(p => p.id === active.id);
+    const activeProject = projectsData.find(p => p.id.toString() === active.id);
     const newStatus = over.id as string;
 
     if (activeProject && activeProject.status !== newStatus) {
-      setProjectsData(prev => 
-        prev.map(project => 
-          project.id === active.id 
-            ? { ...project, status: newStatus }
-            : project
-        )
-      );
+      try {
+        // Optimistic update
+        setProjectsData(prev => 
+          prev.map(project => 
+            project.id.toString() === active.id 
+              ? { ...project, status: newStatus }
+              : project
+          )
+        );
+
+        // Update on server
+        await projectsApi.update(activeProject.id, { status: newStatus });
+        
+        toast({
+          title: "Statut mis à jour",
+          description: `Le projet a été déplacé vers "${newStatus}"`,
+        });
+      } catch (err) {
+        // Revert on error
+        setProjectsData(prev => 
+          prev.map(project => 
+            project.id.toString() === active.id 
+              ? { ...project, status: activeProject.status }
+              : project
+          )
+        );
+        toast({
+          title: "Erreur",
+          description: "Impossible de mettre à jour le statut du projet",
+          variant: "destructive",
+        });
+      }
     }
 
     setActiveId(null);
   };
 
-  const handleViewProject = (projectId: string) => {
+  const handleViewProject = (projectId: string | number) => {
     navigate(`/projects/${projectId}`);
   };
 
-  const projects = projectsData;
+  const handleDeleteProject = async (projectId: string | number) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce projet ?")) return;
+
+    try {
+      await projectsApi.delete(projectId);
+      setProjectsData(prev => prev.filter(p => p.id !== projectId));
+      toast({
+        title: "Projet supprimé",
+        description: "Le projet a été supprimé avec succès",
+      });
+    } catch (err) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le projet",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filter projects based on search and filters
+  const filteredProjects = projectsData.filter(project => {
+    const matchesSearch = searchQuery === "" || 
+      project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === "all" || project.status === statusFilter;
+    const matchesPriority = priorityFilter === "all" || project.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   const stats = [
-    { label: "Total Projets", value: "24", icon: FolderOpen, color: "primary" },
-    { label: "Marchés Remportés", value: "18", icon: CheckCircle, color: "success" },
-    { label: "En Attente", value: "6", icon: Clock, color: "warning" },
-    { label: "Taux de Conversion", value: "75%", icon: TrendingUp, color: "info" },
+    { label: "Total Projets", value: projectsData.length.toString(), icon: FolderOpen, color: "primary" },
+    { label: "Actifs", value: projectsData.filter(p => p.status === "ACTIVE").length.toString(), icon: CheckCircle, color: "success" },
+    { label: "En Attente", value: projectsData.filter(p => p.status === "PENDING").length.toString(), icon: Clock, color: "warning" },
+    { label: "Complétés", value: projectsData.filter(p => p.status === "COMPLETED").length.toString(), icon: TrendingUp, color: "info" },
   ];
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case "Terminé": return "default";
-      case "En cours": return "secondary";
-      case "En attente": return "outline";
-      case "Planifié": return "outline";
+      case "COMPLETED": return "default";
+      case "ACTIVE": return "secondary";
+      case "PENDING": return "outline";
+      case "ON_HOLD": return "outline";
       default: return "outline";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case "Haute": return "bg-destructive/10 text-destructive";
-      case "Moyenne": return "bg-warning/10 text-warning";
-      case "Basse": return "bg-success/10 text-success";
+      case "HIGH": return "bg-destructive/10 text-destructive";
+      case "MEDIUM": return "bg-warning/10 text-warning";
+      case "LOW": return "bg-success/10 text-success";
       default: return "bg-muted text-muted-foreground";
     }
   };
 
   const kanbanColumns = {
-    "Planifié": projects.filter(p => p.status === "Planifié"),
-    "En attente": projects.filter(p => p.status === "En attente"),
-    "En cours": projects.filter(p => p.status === "En cours"),
-    "Terminé": projects.filter(p => p.status === "Terminé"),
+    "PENDING": filteredProjects.filter(p => p.status === "PENDING"),
+    "ON_HOLD": filteredProjects.filter(p => p.status === "ON_HOLD"),
+    "ACTIVE": filteredProjects.filter(p => p.status === "ACTIVE"),
+    "COMPLETED": filteredProjects.filter(p => p.status === "COMPLETED"),
   };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="p-8">
+          <LoadingState message="Chargement des projets..." />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="p-8">
+          <ErrorState 
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -225,8 +268,8 @@ const Projects = () => {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="project-ref">Référence</Label>
-                      <Input id="project-ref" placeholder="PROJ-00XXX" />
+                      <Label htmlFor="project-title">Titre du projet</Label>
+                      <Input id="project-title" placeholder="Nom du projet" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="project-client">Client</Label>
@@ -235,16 +278,14 @@ const Projects = () => {
                           <SelectValue placeholder="Sélectionner un client" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="client1">Entreprise Alpha</SelectItem>
-                          <SelectItem value="client2">Société Beta</SelectItem>
-                          <SelectItem value="client3">Client Gamma</SelectItem>
+                          {customers.map(customer => (
+                            <SelectItem key={customer.id} value={customer.id.toString()}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="project-name">Nom du projet</Label>
-                    <Input id="project-name" placeholder="Nom du projet" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -264,15 +305,15 @@ const Projects = () => {
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="high">Haute</SelectItem>
-                          <SelectItem value="medium">Moyenne</SelectItem>
-                          <SelectItem value="low">Basse</SelectItem>
+                          <SelectItem value="HIGH">Haute</SelectItem>
+                          <SelectItem value="MEDIUM">Moyenne</SelectItem>
+                          <SelectItem value="LOW">Basse</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="budget">Budget</Label>
-                      <Input id="budget" type="text" placeholder="50 000€" />
+                      <Input id="budget" type="number" placeholder="50000" />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -282,7 +323,13 @@ const Projects = () => {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Annuler</Button>
-                  <Button onClick={() => setIsCreateModalOpen(false)}>Créer le projet</Button>
+                  <Button onClick={() => {
+                    setIsCreateModalOpen(false);
+                    toast({
+                      title: "Projet créé",
+                      description: "Le projet a été créé avec succès",
+                    });
+                  }}>Créer le projet</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -295,8 +342,8 @@ const Projects = () => {
             <Card key={index} className="cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 border-l-4" style={{ borderLeftColor: `hsl(var(--${stat.color}))` }}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-${stat.color}/10`}>
-                    <stat.icon className={`h-6 w-6 text-${stat.color}`} />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center`} style={{ backgroundColor: `hsl(var(--${stat.color}) / 0.1)` }}>
+                    <stat.icon className="h-6 w-6" style={{ color: `hsl(var(--${stat.color}))` }} />
                   </div>
                 </div>
                 <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
@@ -312,35 +359,40 @@ const Projects = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <CardTitle className="text-xl">Liste des projets</CardTitle>
-                <CardDescription>Vue d'ensemble de tous vos projets</CardDescription>
+                <CardDescription>{filteredProjects.length} projet{filteredProjects.length > 1 ? 's' : ''}</CardDescription>
               </div>
               <div className="flex gap-2 items-center flex-wrap">
-                <Select defaultValue="all">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Statut" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="planifie">Planifié</SelectItem>
-                    <SelectItem value="attente">En attente</SelectItem>
-                    <SelectItem value="cours">En cours</SelectItem>
-                    <SelectItem value="termine">Terminé</SelectItem>
+                    <SelectItem value="PENDING">En attente</SelectItem>
+                    <SelectItem value="ACTIVE">Actif</SelectItem>
+                    <SelectItem value="ON_HOLD">En pause</SelectItem>
+                    <SelectItem value="COMPLETED">Complété</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select defaultValue="all">
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Priorité" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Toutes priorités</SelectItem>
-                    <SelectItem value="high">Haute</SelectItem>
-                    <SelectItem value="medium">Moyenne</SelectItem>
-                    <SelectItem value="low">Basse</SelectItem>
+                    <SelectItem value="HIGH">Haute</SelectItem>
+                    <SelectItem value="MEDIUM">Moyenne</SelectItem>
+                    <SelectItem value="LOW">Basse</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Rechercher..." className="pl-9 w-64" />
+                  <Input 
+                    placeholder="Rechercher..." 
+                    className="pl-9 w-64" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
                 <div className="flex border rounded-lg p-1 bg-muted/50">
                   <Button 
@@ -374,7 +426,6 @@ const Projects = () => {
                       <TableHead>Référence</TableHead>
                       <TableHead>Nom du projet</TableHead>
                       <TableHead>Client</TableHead>
-                      <TableHead>Manager</TableHead>
                       <TableHead>Statut</TableHead>
                       <TableHead>Priorité</TableHead>
                       <TableHead>Progression</TableHead>
@@ -383,79 +434,82 @@ const Projects = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {projects.map((project) => (
-                      <TableRow key={project.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium">{project.id}</TableCell>
-                        <TableCell className="font-medium">{project.name}</TableCell>
-                        <TableCell>{project.client}</TableCell>
-                        <TableCell>{project.manager}</TableCell>
-                        <TableCell>
-                          <Badge variant={getStatusColor(project.status)}>
-                            {project.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getPriorityColor(project.priority)}`}>
-                            {project.priority}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 bg-secondary rounded-full h-2">
-                              <div 
-                                className="bg-primary h-2 rounded-full transition-all"
-                                style={{ width: `${project.progress}%` }}
-                              />
-                            </div>
-                            <span className="text-xs text-muted-foreground font-medium">{project.progress}%</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-semibold">{project.budget}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex gap-1 justify-end">
-                            <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                    {filteredProjects.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                          Aucun projet trouvé
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredProjects.map((project) => (
+                        <TableRow key={project.id} className="hover:bg-muted/50">
+                          <TableCell className="font-medium font-mono text-xs">{project.code}</TableCell>
+                          <TableCell className="font-medium">{project.title}</TableCell>
+                          <TableCell>{project.customer?.name || "N/A"}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStatusColor(project.status)}>
+                              {project.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getPriorityColor(project.priority)}`}>
+                              {project.priority}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Progress value={project.progress || 0} className="w-24 h-2" />
+                              <span className="text-xs text-muted-foreground font-medium">{project.progress || 0}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold">{project.budget?.toLocaleString()} €</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-1 justify-end">
+                              <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => handleDeleteProject(project.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>
             ) : (
               <DndContext
                 sensors={sensors}
-                collisionDetection={closestCorners}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Object.entries(kanbanColumns).map(([status, projectsList]) => (
+                  {Object.entries(kanbanColumns).map(([status, projects]) => (
                     <KanbanColumn
                       key={status}
-                      status={status}
-                      projects={projectsList}
-                      getPriorityColor={getPriorityColor}
+                      title={status}
+                      projects={projects}
                       onViewProject={handleViewProject}
                     />
                   ))}
                 </div>
                 <DragOverlay>
                   {activeId ? (
-                    <div className="opacity-50">
-                      <ProjectCard
-                        project={projects.find(p => p.id === activeId)!}
-                        getPriorityColor={getPriorityColor}
-                        onViewProject={handleViewProject}
-                      />
-                    </div>
+                    <ProjectCard
+                      project={filteredProjects.find(p => p.id.toString() === activeId)!}
+                      getPriorityColor={getPriorityColor}
+                      onViewProject={handleViewProject}
+                    />
                   ) : null}
                 </DragOverlay>
               </DndContext>

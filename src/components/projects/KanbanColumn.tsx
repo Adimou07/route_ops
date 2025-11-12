@@ -17,21 +17,29 @@ interface Project {
 }
 
 interface KanbanColumnProps {
-  status: string;
-  projects: Project[];
-  getPriorityColor: (priority: string) => string;
-  onViewProject: (id: string) => void;
+  title: string;
+  projects: any[];
+  onViewProject: (id: string | number) => void;
 }
 
-export const KanbanColumn = ({ status, projects, getPriorityColor, onViewProject }: KanbanColumnProps) => {
+export const KanbanColumn = ({ title, projects, onViewProject }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
-    id: status,
+    id: title,
   });
+
+  const getPriorityColor = (priority: string) => {
+    switch(priority) {
+      case "HIGH": return "bg-destructive/10 text-destructive";
+      case "MEDIUM": return "bg-warning/10 text-warning";
+      case "LOW": return "bg-success/10 text-success";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-        <h3 className="font-semibold text-sm">{status}</h3>
+        <h3 className="font-semibold text-sm">{title}</h3>
         <Badge variant="secondary">{projects.length}</Badge>
       </div>
       <div

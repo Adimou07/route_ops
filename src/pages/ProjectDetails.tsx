@@ -38,13 +38,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { projectsApi } from "@/services/api";
+import { LoadingState } from "@/components/ui/loading-spinner";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface Task {
   id: number;
@@ -116,129 +119,34 @@ const ProjectDetails = () => {
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [viewAllTasks, setViewAllTasks] = useState(false);
 
   // Fetch project data from API
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        // Replace with actual API call
-        // const response = await fetch(`http://localhost:3333/api/v1/projects/${id}`);
-        // const data = await response.json();
+        setLoading(true);
+        setError(null);
         
-        // Mock data matching API structure
-        const mockData: Project = {
-          id: 1,
-          code: "PROJ-00001",
-          title: "IT Infrastructure Upgrade",
-          description: "Complete overhaul of company IT infrastructure",
-          customerId: 1,
-          status: "ACTIVE",
-          startDate: "2025-11-12",
-          endDate: "2026-05-12",
-          budget: 150000,
-          priority: "HIGH",
-          managerId: null,
-          createdBy: null,
-          createdAt: "2025-11-12T00:43:20.000+00:00",
-          updatedAt: "2025-11-12T00:43:20.000+00:00",
-          customer: {
-            id: 1,
-            code: "CUST-00001",
-            name: "Acme Corporation",
-            email: "contact@acme.com",
-            phone: "+1234567890",
-            address: "123 Business Street",
-            city: "New York",
-            country: "USA",
-            customerType: "CORPORATE"
-          },
-          manager: null,
-          tasks: [
-            {
-              id: 1,
-              code: "TASK-00001",
-              title: "Infrastructure Assessment",
-              description: "Assess current infrastructure",
-              status: "DONE",
-              priority: "HIGH",
-              dueDate: "2025-11-07",
-              projectId: 1,
-              assignedTo: null,
-              createdBy: null,
-              createdAt: "2025-11-12T00:43:20.000+00:00",
-              updatedAt: "2025-11-12T00:43:20.000+00:00"
-            },
-            {
-              id: 2,
-              code: "TASK-00002",
-              title: "Hardware Procurement",
-              description: "Order necessary hardware",
-              status: "IN_PROGRESS",
-              priority: "HIGH",
-              dueDate: "2025-11-22",
-              projectId: 1,
-              assignedTo: null,
-              createdBy: null,
-              createdAt: "2025-11-12T00:43:20.000+00:00",
-              updatedAt: "2025-11-12T00:43:20.000+00:00"
-            },
-            {
-              id: 3,
-              code: "TASK-00003",
-              title: "Network Configuration",
-              description: "Configure network infrastructure",
-              status: "TODO",
-              priority: "MEDIUM",
-              dueDate: "2025-12-01",
-              projectId: 1,
-              assignedTo: null,
-              createdBy: null,
-              createdAt: "2025-11-12T00:43:20.000+00:00",
-              updatedAt: "2025-11-12T00:43:20.000+00:00"
-            }
-          ],
-          documents: [
-            {
-              id: 1,
-              code: "DOC-00001",
-              title: "Project Proposal",
-              url: "/documents/project-proposal.pdf",
-              fileType: "application/pdf",
-              fileSize: 2048000,
-              linkedTable: "projects",
-              linkedId: 1,
-              createdBy: null,
-              createdAt: "2025-11-12T00:43:18.000+00:00",
-              updatedAt: "2025-11-12T00:43:18.000+00:00"
-            },
-            {
-              id: 2,
-              code: "DOC-00002",
-              title: "Technical Specifications",
-              url: "/documents/tech-specs.pdf",
-              fileType: "application/pdf",
-              fileSize: 1024000,
-              linkedTable: "projects",
-              linkedId: 1,
-              createdBy: null,
-              createdAt: "2025-11-12T00:43:18.000+00:00",
-              updatedAt: "2025-11-12T00:43:18.000+00:00"
-            }
-          ],
-          progress: 50
-        };
-
-        setProject(mockData);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching project:", error);
-        toast.error("Erreur lors du chargement du projet");
+        const data = await projectsApi.getById(id!);
+        setProject(data);
+      } catch (err: any) {
+        setError(err.message || "Erreur lors du chargement du projet");
+        console.error("Error fetching project:", err);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger le projet",
+          variant: "destructive",
+        });
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchProject();
+    if (id) {
+      fetchProject();
+    }
   }, [id]);
 
   const getStatusBadgeVariant = (status: string) => {
@@ -289,25 +197,24 @@ const ProjectDetails = () => {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Chargement du projet...</p>
-          </div>
+        <div className="p-8">
+          <LoadingState message="Chargement du projet..." />
         </div>
       </AppLayout>
     );
   }
 
-  if (!project) {
+  if (error || !project) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Projet introuvable</h2>
-            <p className="text-muted-foreground mb-4">Le projet demandé n'existe pas.</p>
-            <Button onClick={() => navigate('/projects')}>
+        <div className="p-8">
+          <ErrorState 
+            title="Projet introuvable"
+            message={error || "Le projet demandé n'existe pas."}
+            onRetry={() => window.location.reload()}
+          />
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => navigate('/projects')} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour aux projets
             </Button>
@@ -531,7 +438,10 @@ const ProjectDetails = () => {
                         <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>Annuler</Button>
                         <Button onClick={() => {
                           setIsTaskModalOpen(false);
-                          toast.success("Tâche créée avec succès");
+                          toast({
+                            title: "Tâche créée",
+                            description: "La tâche a été créée avec succès",
+                          });
                         }}>Créer</Button>
                       </DialogFooter>
                     </DialogContent>
