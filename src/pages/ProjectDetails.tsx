@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -20,11 +18,14 @@ import {
   Users,
   Plus,
   Download,
-  Upload,
+  Building2,
+  User,
+  TrendingUp,
+  FolderOpen,
   MoreVertical
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,222 +46,315 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface Task {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  dueDate: string;
+  projectId: number;
+  assignedTo: number | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Document {
+  id: number;
+  code: string;
+  title: string;
+  url: string;
+  fileType: string;
+  fileSize: number;
+  linkedTable: string;
+  linkedId: number;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Customer {
+  id: number;
+  code: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  country: string;
+  customerType: string;
+}
+
+interface Project {
+  id: number;
+  code: string;
+  title: string;
+  description: string;
+  customerId: number;
+  status: string;
+  startDate: string;
+  endDate: string;
+  budget: number;
+  priority: string;
+  managerId: number | null;
+  createdBy: number | null;
+  createdAt: string;
+  updatedAt: string;
+  customer: Customer;
+  manager: any;
+  tasks: Task[];
+  documents: Document[];
+  progress: number;
+}
+
 const ProjectDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isDocModalOpen, setIsDocModalOpen] = useState(false);
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [viewAllTasks, setViewAllTasks] = useState(false);
 
-  // Mock data - replace with API call
-  const project = {
-    id: id || "PROJ-00123",
-    name: "Installation Réseau Client A",
-    client: "Entreprise Alpha",
-    status: "En cours",
-    priority: "Haute",
-    progress: 65,
-    budget: 75000,
-    spent: 48750,
-    startDate: "15/03/2024",
-    endDate: "30/06/2024",
-    description: "Installation complète du réseau informatique avec migration des serveurs et formation du personnel.",
-    manager: {
-      name: "Jean Dupont",
-      email: "jean.dupont@company.com",
-      avatar: "https://i.pravatar.cc/150?img=1"
-    }
-  };
+  // Fetch project data from API
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        // Replace with actual API call
+        // const response = await fetch(`http://localhost:3333/api/v1/projects/${id}`);
+        // const data = await response.json();
+        
+        // Mock data matching API structure
+        const mockData: Project = {
+          id: 1,
+          code: "PROJ-00001",
+          title: "IT Infrastructure Upgrade",
+          description: "Complete overhaul of company IT infrastructure",
+          customerId: 1,
+          status: "ACTIVE",
+          startDate: "2025-11-12",
+          endDate: "2026-05-12",
+          budget: 150000,
+          priority: "HIGH",
+          managerId: null,
+          createdBy: null,
+          createdAt: "2025-11-12T00:43:20.000+00:00",
+          updatedAt: "2025-11-12T00:43:20.000+00:00",
+          customer: {
+            id: 1,
+            code: "CUST-00001",
+            name: "Acme Corporation",
+            email: "contact@acme.com",
+            phone: "+1234567890",
+            address: "123 Business Street",
+            city: "New York",
+            country: "USA",
+            customerType: "CORPORATE"
+          },
+          manager: null,
+          tasks: [
+            {
+              id: 1,
+              code: "TASK-00001",
+              title: "Infrastructure Assessment",
+              description: "Assess current infrastructure",
+              status: "DONE",
+              priority: "HIGH",
+              dueDate: "2025-11-07",
+              projectId: 1,
+              assignedTo: null,
+              createdBy: null,
+              createdAt: "2025-11-12T00:43:20.000+00:00",
+              updatedAt: "2025-11-12T00:43:20.000+00:00"
+            },
+            {
+              id: 2,
+              code: "TASK-00002",
+              title: "Hardware Procurement",
+              description: "Order necessary hardware",
+              status: "IN_PROGRESS",
+              priority: "HIGH",
+              dueDate: "2025-11-22",
+              projectId: 1,
+              assignedTo: null,
+              createdBy: null,
+              createdAt: "2025-11-12T00:43:20.000+00:00",
+              updatedAt: "2025-11-12T00:43:20.000+00:00"
+            },
+            {
+              id: 3,
+              code: "TASK-00003",
+              title: "Network Configuration",
+              description: "Configure network infrastructure",
+              status: "TODO",
+              priority: "MEDIUM",
+              dueDate: "2025-12-01",
+              projectId: 1,
+              assignedTo: null,
+              createdBy: null,
+              createdAt: "2025-11-12T00:43:20.000+00:00",
+              updatedAt: "2025-11-12T00:43:20.000+00:00"
+            }
+          ],
+          documents: [
+            {
+              id: 1,
+              code: "DOC-00001",
+              title: "Project Proposal",
+              url: "/documents/project-proposal.pdf",
+              fileType: "application/pdf",
+              fileSize: 2048000,
+              linkedTable: "projects",
+              linkedId: 1,
+              createdBy: null,
+              createdAt: "2025-11-12T00:43:18.000+00:00",
+              updatedAt: "2025-11-12T00:43:18.000+00:00"
+            },
+            {
+              id: 2,
+              code: "DOC-00002",
+              title: "Technical Specifications",
+              url: "/documents/tech-specs.pdf",
+              fileType: "application/pdf",
+              fileSize: 1024000,
+              linkedTable: "projects",
+              linkedId: 1,
+              createdBy: null,
+              createdAt: "2025-11-12T00:43:18.000+00:00",
+              updatedAt: "2025-11-12T00:43:18.000+00:00"
+            }
+          ],
+          progress: 50
+        };
 
-  const timelineEvents = [
-    {
-      id: 1,
-      type: "client",
-      title: "Projet créé",
-      description: "Le projet a été créé dans le système",
-      date: "15/03/2024",
-      time: "09:30",
-      user: "Marie Dubois"
-    },
-    {
-      id: 2,
-      type: "internal",
-      title: "Manager assigné",
-      description: "Jean Dupont a été assigné comme chef de projet",
-      date: "15/03/2024",
-      time: "14:20",
-      user: "Marie Dubois"
-    },
-    {
-      id: 3,
-      type: "supplier",
-      title: "Commande fournisseur créée",
-      description: "Commande PO-00234 envoyée au fournisseur",
-      date: "18/03/2024",
-      time: "10:15",
-      user: "Jean Dupont"
-    },
-    {
-      id: 4,
-      type: "internal",
-      title: "Progression mise à jour",
-      description: "Phase d'installation démarrée - 45% complété",
-      date: "25/03/2024",
-      time: "16:45",
-      user: "Jean Dupont"
-    }
-  ];
+        setProject(mockData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching project:", error);
+        toast.error("Erreur lors du chargement du projet");
+        setLoading(false);
+      }
+    };
 
-  const tasks = [
-    {
-      id: "TASK-001",
-      title: "Installation des serveurs principaux",
-      status: "Terminé",
-      priority: "Haute",
-      assignee: { name: "Pierre Martin", avatar: "https://i.pravatar.cc/150?img=2" },
-      dueDate: "20/03/2024",
-      progress: 100
-    },
-    {
-      id: "TASK-002",
-      title: "Configuration du réseau",
-      status: "En cours",
-      priority: "Haute",
-      assignee: { name: "Sophie Bernard", avatar: "https://i.pravatar.cc/150?img=3" },
-      dueDate: "30/03/2024",
-      progress: 65
-    },
-    {
-      id: "TASK-003",
-      title: "Tests de sécurité",
-      status: "En attente",
-      priority: "Moyenne",
-      assignee: { name: "Luc Leroy", avatar: "https://i.pravatar.cc/150?img=4" },
-      dueDate: "10/04/2024",
-      progress: 0
-    },
-    {
-      id: "TASK-004",
-      title: "Formation du personnel",
-      status: "Planifié",
-      priority: "Basse",
-      assignee: { name: "Anne Petit", avatar: "https://i.pravatar.cc/150?img=5" },
-      dueDate: "25/04/2024",
-      progress: 0
-    }
-  ];
+    fetchProject();
+  }, [id]);
 
-  const documents = [
-    {
-      id: "DOC-001",
-      title: "Cahier des charges.pdf",
-      type: "PDF",
-      size: "2.4 MB",
-      uploadedBy: "Marie Dubois",
-      uploadedDate: "15/03/2024",
-      category: "Contrat"
-    },
-    {
-      id: "DOC-002",
-      title: "Plan réseau.dwg",
-      type: "DWG",
-      size: "5.1 MB",
-      uploadedBy: "Jean Dupont",
-      uploadedDate: "18/03/2024",
-      category: "Technique"
-    },
-    {
-      id: "DOC-003",
-      title: "Facture fournisseur.pdf",
-      type: "PDF",
-      size: "156 KB",
-      uploadedBy: "Sophie Bernard",
-      uploadedDate: "22/03/2024",
-      category: "Finance"
-    }
-  ];
-
-  const teamMembers = [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      role: "Chef de projet",
-      email: "jean.dupont@company.com",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      status: "active"
-    },
-    {
-      id: 2,
-      name: "Pierre Martin",
-      role: "Ingénieur réseau",
-      email: "pierre.martin@company.com",
-      avatar: "https://i.pravatar.cc/150?img=2",
-      status: "active"
-    },
-    {
-      id: 3,
-      name: "Sophie Bernard",
-      role: "Technicienne",
-      email: "sophie.bernard@company.com",
-      avatar: "https://i.pravatar.cc/150?img=3",
-      status: "active"
-    },
-    {
-      id: 4,
-      name: "Luc Leroy",
-      role: "Sécurité IT",
-      email: "luc.leroy@company.com",
-      avatar: "https://i.pravatar.cc/150?img=4",
-      status: "active"
-    }
-  ];
-
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch(status) {
-      case "Terminé": return "default";
-      case "En cours": return "secondary";
-      case "En attente": return "outline";
-      case "Planifié": return "outline";
+      case "ACTIVE":
+      case "IN_PROGRESS": return "secondary";
+      case "DONE":
+      case "COMPLETED": return "default";
+      case "PENDING":
+      case "TODO": return "outline";
       default: return "outline";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch(priority) {
-      case "Haute": return "bg-destructive/10 text-destructive";
-      case "Moyenne": return "bg-warning/10 text-warning";
-      case "Basse": return "bg-success/10 text-success";
+      case "HIGH": return "bg-destructive/10 text-destructive hover:bg-destructive/20";
+      case "MEDIUM": return "bg-warning/10 text-warning hover:bg-warning/20";
+      case "LOW": return "bg-success/10 text-success hover:bg-success/20";
       default: return "bg-muted text-muted-foreground";
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch(type) {
-      case "client": return "border-l-4 border-l-success";
-      case "supplier": return "border-l-4 border-l-primary";
-      case "internal": return "border-l-4 border-l-warning";
-      default: return "border-l-4 border-l-muted";
-    }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
-  const budgetPercent = (project.spent / project.budget) * 100;
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const getTaskStats = () => {
+    if (!project) return { total: 0, done: 0, inProgress: 0, todo: 0 };
+    return {
+      total: project.tasks.length,
+      done: project.tasks.filter(t => t.status === 'DONE').length,
+      inProgress: project.tasks.filter(t => t.status === 'IN_PROGRESS').length,
+      todo: project.tasks.filter(t => t.status === 'TODO' || t.status === 'PENDING').length,
+    };
+  };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Chargement du projet...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!project) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Projet introuvable</h2>
+            <p className="text-muted-foreground mb-4">Le projet demandé n'existe pas.</p>
+            <Button onClick={() => navigate('/projects')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour aux projets
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const taskStats = getTaskStats();
+  const displayedTasks = viewAllTasks ? project.tasks : project.tasks.slice(0, 3);
 
   return (
     <AppLayout>
       <div className="p-8 space-y-6 animate-fade-in">
-        {/* Page Header */}
+        {/* Back Button & Page Header */}
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/projects')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour aux projets
+          </Button>
+        </div>
+
         <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/projects')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                {project.name}
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-foreground">
+                {project.title}
               </h1>
-              <p className="text-muted-foreground mt-1">
-                {project.id} • Client: {project.client}
-              </p>
+              <Badge variant={getStatusBadgeVariant(project.status)}>
+                {project.status}
+              </Badge>
+              <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${getPriorityColor(project.priority)}`}>
+                {project.priority}
+              </span>
             </div>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <span className="font-mono font-medium">{project.code}</span>
+              <span>•</span>
+              <Building2 className="h-4 w-4" />
+              <span>{project.customer.name}</span>
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline">
@@ -275,7 +370,7 @@ const ProjectDetails = () => {
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className="border-l-4 border-l-primary">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -283,17 +378,17 @@ const ProjectDetails = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Échéance</p>
-                  <p className="text-lg font-bold">{project.endDate}</p>
+                  <p className="text-lg font-bold">{formatDate(project.endDate)}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-success">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-success" />
+                  <TrendingUp className="h-6 w-6 text-success" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Progression</p>
@@ -303,7 +398,7 @@ const ProjectDetails = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-warning">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
@@ -311,21 +406,21 @@ const ProjectDetails = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Budget</p>
-                  <p className="text-lg font-bold">{project.budget.toLocaleString()}€</p>
+                  <p className="text-lg font-bold">{project.budget.toLocaleString()} €</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-l-4 border-l-accent">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-info/10 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-info" />
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Équipe</p>
-                  <p className="text-lg font-bold">{teamMembers.length} membres</p>
+                  <p className="text-sm text-muted-foreground">Tâches</p>
+                  <p className="text-lg font-bold">{taskStats.done}/{taskStats.total}</p>
                 </div>
               </div>
             </CardContent>
@@ -339,15 +434,7 @@ const ProjectDetails = () => {
             {/* Project Info */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Informations du projet</CardTitle>
-                  <div className="flex gap-2">
-                    <Badge variant={getStatusColor(project.status)}>{project.status}</Badge>
-                    <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getPriorityColor(project.priority)}`}>
-                      {project.priority}
-                    </span>
-                  </div>
-                </div>
+                <CardTitle>Informations du projet</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -358,342 +445,299 @@ const ProjectDetails = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Date de début</p>
-                    <p className="text-sm font-semibold">{project.startDate}</p>
+                    <p className="text-sm font-semibold">{formatDate(project.startDate)}</p>
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground mb-1">Date de fin</p>
-                    <p className="text-sm font-semibold">{project.endDate}</p>
+                    <p className="text-sm font-semibold">{formatDate(project.endDate)}</p>
                   </div>
                 </div>
                 <Separator />
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm font-medium text-muted-foreground">Utilisation du budget</p>
-                    <p className="text-sm font-semibold">{budgetPercent.toFixed(1)}%</p>
+                    <p className="text-sm font-medium text-muted-foreground">Progression du projet</p>
+                    <p className="text-sm font-semibold">{project.progress}%</p>
                   </div>
-                  <Progress value={budgetPercent} className="h-2" />
-                  <div className="flex items-center justify-between mt-2">
-                    <p className="text-xs text-muted-foreground">Dépensé: {project.spent.toLocaleString()}€</p>
-                    <p className="text-xs text-muted-foreground">Budget: {project.budget.toLocaleString()}€</p>
-                  </div>
+                  <Progress value={project.progress} className="h-2" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Tabs - Tasks, Timeline, Documents */}
+            {/* Tasks Section */}
             <Card>
-              <CardContent className="p-0">
-                <Tabs defaultValue="tasks" className="w-full">
-                  <div className="border-b px-6">
-                    <TabsList className="bg-transparent">
-                      <TabsTrigger value="tasks">Tâches ({tasks.length})</TabsTrigger>
-                      <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                      <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-                    </TabsList>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Tâches du projet</CardTitle>
+                    <CardDescription>
+                      {taskStats.done} terminée{taskStats.done > 1 ? 's' : ''} sur {taskStats.total}
+                    </CardDescription>
                   </div>
-
-                  <TabsContent value="tasks" className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Liste des tâches</h3>
-                      <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Nouvelle tâche
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Créer une nouvelle tâche</DialogTitle>
-                            <DialogDescription>Ajouter une tâche au projet</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Label>Titre de la tâche</Label>
-                              <Input placeholder="Nom de la tâche" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Description</Label>
-                              <Textarea placeholder="Description..." rows={3} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Priorité</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Sélectionner" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="high">Haute</SelectItem>
-                                    <SelectItem value="medium">Moyenne</SelectItem>
-                                    <SelectItem value="low">Basse</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Assignée à</Label>
-                                <Select>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Sélectionner" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {teamMembers.map(member => (
-                                      <SelectItem key={member.id} value={member.id.toString()}>
-                                        {member.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Date d'échéance</Label>
-                              <Input type="date" />
-                            </div>
+                  <Dialog open={isTaskModalOpen} onOpenChange={setIsTaskModalOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nouvelle tâche
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Créer une nouvelle tâche</DialogTitle>
+                        <DialogDescription>Ajouter une tâche au projet</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label>Titre de la tâche</Label>
+                          <Input placeholder="Nom de la tâche" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Description</Label>
+                          <Textarea placeholder="Description..." rows={3} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Priorité</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="HIGH">Haute</SelectItem>
+                                <SelectItem value="MEDIUM">Moyenne</SelectItem>
+                                <SelectItem value="LOW">Basse</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>Annuler</Button>
-                            <Button onClick={() => setIsTaskModalOpen(false)}>Créer</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    <div className="space-y-3">
-                      {tasks.map((task) => (
-                        <div key={task.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-sm">{task.title}</h4>
-                                <Badge variant={getStatusColor(task.status)} className="text-xs">
-                                  {task.status}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground">{task.id}</p>
-                            </div>
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(task.priority)}`}>
-                              {task.priority}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-7 w-7">
-                                <AvatarImage src={task.assignee.avatar} />
-                                <AvatarFallback>{task.assignee.name[0]}</AvatarFallback>
-                              </Avatar>
-                              <span className="text-xs text-muted-foreground">{task.assignee.name}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {task.dueDate}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <Progress value={task.progress} className="w-16 h-1" />
-                                <span className="text-xs font-medium">{task.progress}%</span>
-                              </div>
-                            </div>
+                          <div className="space-y-2">
+                            <Label>Statut</Label>
+                            <Select>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Sélectionner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="TODO">À faire</SelectItem>
+                                <SelectItem value="IN_PROGRESS">En cours</SelectItem>
+                                <SelectItem value="DONE">Terminé</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="timeline" className="p-6 space-y-4">
-                    <h3 className="font-semibold">Historique du projet</h3>
-                    <div className="relative space-y-4">
-                      {/* Timeline line */}
-                      <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-border" />
-                      
-                      {timelineEvents.map((event, index) => (
-                        <div key={event.id} className={`relative pl-14 pb-4 ${getTypeColor(event.type)} rounded-lg p-4 bg-card hover:bg-muted/50 transition-colors animate-fade-in`} style={{ animationDelay: `${index * 100}ms` }}>
-                          <div className="absolute left-4 w-4 h-4 rounded-full bg-background border-2 border-primary" />
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-semibold text-sm">{event.title}</h4>
-                              <span className="text-xs text-muted-foreground">{event.time}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{event.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs font-medium text-muted-foreground">{event.user}</span>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <span className="text-xs text-muted-foreground">{event.date}</span>
-                            </div>
-                          </div>
+                        <div className="space-y-2">
+                          <Label>Date d'échéance</Label>
+                          <Input type="date" />
                         </div>
-                      ))}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="documents" className="p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold">Documents attachés</h3>
-                      <Dialog open={isDocModalOpen} onOpenChange={setIsDocModalOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm">
-                            <Upload className="h-4 w-4 mr-2" />
-                            Ajouter document
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Ajouter un document</DialogTitle>
-                            <DialogDescription>Télécharger un document pour ce projet</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4 py-4">
-                            <div className="space-y-2">
-                              <Label>Titre du document</Label>
-                              <Input placeholder="Nom du fichier" />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Catégorie</Label>
-                              <Select>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Sélectionner" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="contract">Contrat</SelectItem>
-                                  <SelectItem value="technical">Technique</SelectItem>
-                                  <SelectItem value="finance">Finance</SelectItem>
-                                  <SelectItem value="other">Autre</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Fichier</Label>
-                              <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground mb-2">Glissez un fichier ou cliquez pour parcourir</p>
-                                <Input type="file" className="hidden" id="file-upload" />
-                                <Label htmlFor="file-upload" className="cursor-pointer">
-                                  <Button variant="outline" size="sm" asChild>
-                                    <span>Parcourir</span>
-                                  </Button>
-                                </Label>
-                              </div>
-                            </div>
-                          </div>
-                          <DialogFooter>
-                            <Button variant="outline" onClick={() => setIsDocModalOpen(false)}>Annuler</Button>
-                            <Button onClick={() => setIsDocModalOpen(false)}>Télécharger</Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                    <div className="space-y-3">
-                      {documents.map((doc) => (
-                        <div key={doc.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <h4 className="font-semibold text-sm">{doc.title}</h4>
-                              <p className="text-xs text-muted-foreground">
-                                {doc.category} • {doc.size} • Ajouté par {doc.uploadedBy}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Télécharger</DropdownMenuItem>
-                                <DropdownMenuItem>Renommer</DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive">Supprimer</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>Annuler</Button>
+                        <Button onClick={() => {
+                          setIsTaskModalOpen(false);
+                          toast.success("Tâche créée avec succès");
+                        }}>Créer</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {displayedTasks.map((task) => (
+                  <div key={task.id} className="p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-sm">{task.title}</h4>
+                          <Badge variant={getStatusBadgeVariant(task.status)} className="text-xs">
+                            {task.status}
+                          </Badge>
                         </div>
-                      ))}
+                        <p className="text-xs text-muted-foreground mb-1">{task.code}</p>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground">{task.description}</p>
+                        )}
+                      </div>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(task.priority)}`}>
+                        {task.priority}
+                      </span>
                     </div>
-                  </TabsContent>
-                </Tabs>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Échéance: {formatDate(task.dueDate)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+
+                {project.tasks.length > 3 && !viewAllTasks && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setViewAllTasks(true)}
+                  >
+                    Voir toutes les tâches ({project.tasks.length})
+                  </Button>
+                )}
+
+                {viewAllTasks && project.tasks.length > 3 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    onClick={() => setViewAllTasks(false)}
+                  >
+                    Voir moins
+                  </Button>
+                )}
+
+                {project.tasks.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune tâche pour ce projet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Documents Section */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Documents</CardTitle>
+                    <CardDescription>{project.documents.length} document{project.documents.length > 1 ? 's' : ''}</CardDescription>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {project.documents.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-sm">{doc.title}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.code} • {formatFileSize(doc.fileSize)}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>
+                          <Download className="h-4 w-4 mr-2" />
+                          Télécharger
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Renommer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                ))}
+
+                {project.documents.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FolderOpen className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucun document</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
-            {/* Project Manager */}
+            {/* Client Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Chef de projet</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={project.manager.avatar} />
-                    <AvatarFallback>{project.manager.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold text-sm">{project.manager.name}</p>
-                    <p className="text-xs text-muted-foreground">{project.manager.email}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Team Members */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Équipe ({teamMembers.length})</CardTitle>
-                  <Button size="sm" variant="ghost">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+                <CardTitle className="text-lg">Client</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {teamMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback>{member.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium text-sm">{member.name}</p>
-                        <p className="text-xs text-muted-foreground">{member.role}</p>
-                      </div>
-                    </div>
-                    <div className="w-2 h-2 rounded-full bg-success" title="Actif" />
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Building2 className="h-5 w-5 text-primary" />
                   </div>
-                ))}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm">{project.customer.name}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{project.customer.email}</p>
+                    <p className="text-xs text-muted-foreground">{project.customer.phone}</p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Type</span>
+                    <span className="font-medium">{project.customer.customerType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Ville</span>
+                    <span className="font-medium">{project.customer.city}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pays</span>
+                    <span className="font-medium">{project.customer.country}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Quick Stats */}
+            {/* Manager Info */}
+            {project.manager && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Chef de projet</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold text-sm">{project.manager.name}</h4>
+                      <p className="text-xs text-muted-foreground truncate">{project.manager.email}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Stats Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Statistiques rapides</CardTitle>
+                <CardTitle className="text-lg">Statistiques</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Tâches terminées</span>
-                  <span className="font-semibold">1/4</span>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-muted-foreground">Total tâches</span>
+                  <span className="text-lg font-bold">{taskStats.total}</span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Documents</span>
-                  <span className="font-semibold">{documents.length}</span>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-success">Terminées</span>
+                  <span className="text-lg font-bold text-success">{taskStats.done}</span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Jours restants</span>
-                  <span className="font-semibold text-warning">45</span>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-warning">En cours</span>
+                  <span className="text-lg font-bold text-warning">{taskStats.inProgress}</span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Budget restant</span>
-                  <span className="font-semibold text-success">{(project.budget - project.spent).toLocaleString()}€</span>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-sm text-muted-foreground">À faire</span>
+                  <span className="text-lg font-bold">{taskStats.todo}</span>
                 </div>
               </CardContent>
             </Card>
