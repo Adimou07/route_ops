@@ -9,6 +9,7 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Tasks from "./pages/Tasks";
 import RFQ from "./pages/RFQ";
+import RFQDetails from "./pages/RFQDetails";
 import SalesOrders from "./pages/SalesOrders";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Suppliers from "./pages/Suppliers";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/projects/:id" element={<ProjectDetails />} />
           <Route path="/tasks" element={<Tasks />} />
           <Route path="/rfq" element={<RFQ />} />
+          <Route path="/rfq/:id" element={<RFQDetails />} />
           <Route path="/sales-orders" element={<SalesOrders />} />
           <Route path="/purchase-orders" element={<PurchaseOrders />} />
           <Route path="/suppliers" element={<Suppliers />} />
