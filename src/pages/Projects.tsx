@@ -19,9 +19,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { projectsApi, customersApi } from "@/services/api";
 import { LoadingState } from "@/components/ui/loading-spinner";
 import { ErrorState } from "@/components/ui/error-state";
+import { mockProjects } from "@/data/mockData";
 import {
   DndContext,
   DragEndEvent,
@@ -48,23 +48,23 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
-  // Fetch projects and customers
+  // Fetch projects from mock data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const [projectsResponse, customersResponse] = await Promise.all([
-          projectsApi.getAll(),
-          customersApi.getAll()
-        ]);
-        setProjectsData(projectsResponse);
-        setCustomers(customersResponse);
+        
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        setProjectsData(mockProjects);
+        setCustomers(mockProjects.map(p => p.customer));
       } catch (err: any) {
         setError(err.message || "Erreur lors du chargement des projets");
         toast({
           title: "Erreur",
-          description: "Impossible de charger les projets. Vérifiez que le serveur est démarré.",
+          description: "Impossible de charger les projets.",
           variant: "destructive",
         });
       } finally {
@@ -99,38 +99,19 @@ const Projects = () => {
     const newStatus = over.id as string;
 
     if (activeProject && activeProject.status !== newStatus) {
-      try {
-        // Optimistic update
-        setProjectsData(prev => 
-          prev.map(project => 
-            project.id.toString() === active.id 
-              ? { ...project, status: newStatus }
-              : project
-          )
-        );
-
-        // Update on server
-        await projectsApi.update(activeProject.id, { status: newStatus });
-        
-        toast({
-          title: "Statut mis à jour",
-          description: `Le projet a été déplacé vers "${newStatus}"`,
-        });
-      } catch (err) {
-        // Revert on error
-        setProjectsData(prev => 
-          prev.map(project => 
-            project.id.toString() === active.id 
-              ? { ...project, status: activeProject.status }
-              : project
-          )
-        );
-        toast({
-          title: "Erreur",
-          description: "Impossible de mettre à jour le statut du projet",
-          variant: "destructive",
-        });
-      }
+      // Optimistic update for mock data
+      setProjectsData(prev => 
+        prev.map(project => 
+          project.id.toString() === active.id 
+            ? { ...project, status: newStatus }
+            : project
+        )
+      );
+      
+      toast({
+        title: "Statut mis à jour",
+        description: `Le projet a été déplacé vers "${newStatus}"`,
+      });
     }
 
     setActiveId(null);
@@ -143,20 +124,12 @@ const Projects = () => {
   const handleDeleteProject = async (projectId: string | number) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce projet ?")) return;
 
-    try {
-      await projectsApi.delete(projectId);
-      setProjectsData(prev => prev.filter(p => p.id !== projectId));
-      toast({
-        title: "Projet supprimé",
-        description: "Le projet a été supprimé avec succès",
-      });
-    } catch (err) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le projet",
-        variant: "destructive",
-      });
-    }
+    // Mock deletion
+    setProjectsData(prev => prev.filter(p => p.id !== projectId));
+    toast({
+      title: "Projet supprimé",
+      description: "Le projet a été supprimé avec succès",
+    });
   };
 
   // Filter projects based on search and filters

@@ -22,7 +22,10 @@ import {
   User,
   TrendingUp,
   FolderOpen,
-  MoreVertical
+  MoreVertical,
+  FileQuestion,
+  ShoppingCart,
+  Package
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -45,9 +48,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { projectsApi } from "@/services/api";
 import { LoadingState } from "@/components/ui/loading-spinner";
 import { ErrorState } from "@/components/ui/error-state";
+import { getMockProjectById } from "@/data/mockData";
 
 interface Task {
   id: number;
@@ -90,6 +93,41 @@ interface Customer {
   customerType: string;
 }
 
+interface RFQ {
+  id: number;
+  code: string;
+  title: string;
+  status: string;
+  totalAmount: number;
+  validUntil: string;
+  supplier: {
+    name: string;
+  };
+}
+
+interface SalesOrder {
+  id: number;
+  code: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  orderDate: string;
+  deliveryDate: string;
+}
+
+interface PurchaseOrder {
+  id: number;
+  code: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  orderDate: string;
+  expectedDelivery: string;
+  supplier: {
+    name: string;
+  };
+}
+
 interface Project {
   id: number;
   code: string;
@@ -110,6 +148,9 @@ interface Project {
   tasks: Task[];
   documents: Document[];
   progress: number;
+  rfqs: RFQ[];
+  salesOrders: SalesOrder[];
+  purchaseOrders: PurchaseOrder[];
 }
 
 const ProjectDetails = () => {
@@ -122,14 +163,17 @@ const ProjectDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewAllTasks, setViewAllTasks] = useState(false);
 
-  // Fetch project data from API
+  // Fetch project data from mock data
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        const data = await projectsApi.getById(id!);
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const data = getMockProjectById(id!);
         setProject(data);
       } catch (err: any) {
         setError(err.message || "Erreur lors du chargement du projet");
@@ -501,6 +545,163 @@ const ProjectDetails = () => {
                   <div className="text-center py-8 text-muted-foreground">
                     <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p className="text-sm">Aucune tâche pour ce projet</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* RFQ Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileQuestion className="h-5 w-5" />
+                  Demandes de Cotation (RFQ)
+                </CardTitle>
+                <CardDescription>
+                  {project.rfqs.length} demande{project.rfqs.length > 1 ? 's' : ''} de cotation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {project.rfqs.map((rfq) => (
+                  <div key={rfq.id} className="p-4 border rounded-lg hover:bg-accent/5 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-sm">{rfq.title}</h4>
+                          <Badge variant={getStatusBadgeVariant(rfq.status)}>
+                            {rfq.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{rfq.code}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Fournisseur</p>
+                        <p className="font-medium">{rfq.supplier.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Montant</p>
+                        <p className="font-medium">{rfq.totalAmount.toLocaleString('fr-FR')} €</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-muted-foreground mb-1">Valide jusqu'au</p>
+                        <p className="font-medium">{formatDate(rfq.validUntil)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {project.rfqs.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileQuestion className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune demande de cotation</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Sales Orders Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingCart className="h-5 w-5" />
+                  Commandes Clients (SO)
+                </CardTitle>
+                <CardDescription>
+                  {project.salesOrders.length} commande{project.salesOrders.length > 1 ? 's' : ''} client
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {project.salesOrders.map((so) => (
+                  <div key={so.id} className="p-4 border rounded-lg hover:bg-accent/5 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-sm">{so.orderNumber}</h4>
+                          <Badge variant={getStatusBadgeVariant(so.status)}>
+                            {so.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{so.code}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Montant total</p>
+                        <p className="font-medium text-lg">{so.totalAmount.toLocaleString('fr-FR')} €</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Date de commande</p>
+                        <p className="font-medium">{formatDate(so.orderDate)}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-muted-foreground mb-1">Livraison prévue</p>
+                        <p className="font-medium">{formatDate(so.deliveryDate)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {project.salesOrders.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShoppingCart className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucune commande client</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Purchase Orders Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Bons de Commande (PO)
+                </CardTitle>
+                <CardDescription>
+                  {project.purchaseOrders.length} bon{project.purchaseOrders.length > 1 ? 's' : ''} de commande
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {project.purchaseOrders.map((po) => (
+                  <div key={po.id} className="p-4 border rounded-lg hover:bg-accent/5 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-sm">{po.orderNumber}</h4>
+                          <Badge variant={getStatusBadgeVariant(po.status)}>
+                            {po.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">{po.code}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Fournisseur</p>
+                        <p className="font-medium">{po.supplier.name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Montant</p>
+                        <p className="font-medium">{po.totalAmount.toLocaleString('fr-FR')} €</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Date de commande</p>
+                        <p className="font-medium">{formatDate(po.orderDate)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Livraison attendue</p>
+                        <p className="font-medium">{formatDate(po.expectedDelivery)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {project.purchaseOrders.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Aucun bon de commande</p>
                   </div>
                 )}
               </CardContent>
