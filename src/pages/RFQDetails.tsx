@@ -13,7 +13,9 @@ import {
   FileText, 
   Calculator,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ChevronsDownUp,
+  ChevronsUpDown
 } from "lucide-react";
 import {
   Select,
@@ -33,6 +35,7 @@ const RFQDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
+  const [allExpanded, setAllExpanded] = useState(false);
 
   // Simuler le chargement des données
   const rfq = mockRFQDetails;
@@ -43,6 +46,15 @@ const RFQDetails = () => {
         ? prev.filter(id => id !== itemId)
         : [...prev, itemId]
     );
+  };
+
+  const toggleAllItems = () => {
+    if (allExpanded) {
+      setExpandedItems([]);
+    } else {
+      setExpandedItems(rfq.items.map(item => item.id));
+    }
+    setAllExpanded(!allExpanded);
   };
 
   const getStatusVariant = (status: string) => {
@@ -107,8 +119,8 @@ const RFQDetails = () => {
           </div>
         </div>
 
-        {/* Recap Section - Totaux */}
-        <Card className="border-primary/20 bg-primary/5">
+        {/* Recap Section - Totaux - STICKY */}
+        <Card className="border-primary/20 bg-primary/5 sticky top-0 z-10 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calculator className="h-5 w-5" />
@@ -116,48 +128,48 @@ const RFQDetails = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Sous-total HT</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-sm text-muted-foreground">Total Achat HT</p>
+                <p className="text-xl font-bold text-red-600">
+                  {formatCurrency(rfq.totals.costTotal, rfq.baseCurrency)}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Total Vente HT</p>
+                <p className="text-xl font-bold text-foreground">
                   {formatCurrency(rfq.totals.subtotalExcl, rfq.baseCurrency)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Remise ({rfq.totals.weightedAvgDiscountRate.toFixed(2)}%)</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-xl font-bold text-orange-600">
                   -{formatCurrency(rfq.totals.lineDiscountTotal, rfq.baseCurrency)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">TVA ({rfq.globalTaxRate}%)</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-xl font-bold text-blue-600">
                   {formatCurrency(rfq.totals.taxTotal, rfq.baseCurrency)}
                 </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Total TTC</p>
-                <p className="text-3xl font-bold text-primary">
+                <p className="text-sm text-muted-foreground">Total TTC Client</p>
+                <p className="text-2xl font-bold text-primary">
                   {formatCurrency(rfq.totals.grandTotal, rfq.baseCurrency)}
                 </p>
               </div>
             </div>
-            <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="mt-4 pt-4 border-t grid grid-cols-2 md:grid-cols-2 gap-6">
               <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Coût Total</p>
-                <p className="text-lg font-semibold">
-                  {formatCurrency(rfq.totals.costTotal, rfq.baseCurrency)}
-                </p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Marge</p>
-                <p className="text-lg font-semibold text-green-600">
+                <p className="text-sm text-muted-foreground">Marge Nette</p>
+                <p className="text-2xl font-semibold text-green-600">
                   {formatCurrency(rfq.totals.marginAmount, rfq.baseCurrency)}
                 </p>
               </div>
               <div className="space-y-1">
                 <p className="text-sm text-muted-foreground">Taux de Marge</p>
-                <p className="text-lg font-semibold text-green-600">
+                <p className="text-2xl font-semibold text-green-600">
                   {rfq.totals.marginRate.toFixed(2)}%
                 </p>
               </div>
@@ -198,6 +210,10 @@ const RFQDetails = () => {
                 <Input value={rfq.baseCurrency} readOnly />
               </div>
               <div className="space-y-2">
+                <Label>Taux de Change Global</Label>
+                <Input type="number" value={rfq.fxFeePct} />
+              </div>
+              <div className="space-y-2">
                 <Label>Incoterm</Label>
                 <Input value={rfq.incoterm} />
               </div>
@@ -218,9 +234,29 @@ const RFQDetails = () => {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Articles ({rfq.items.length})</CardTitle>
-              <Button variant="outline" size="sm">
-                Ajouter un Article
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={toggleAllItems}
+                  className="gap-2"
+                >
+                  {allExpanded ? (
+                    <>
+                      <ChevronsDownUp className="h-4 w-4" />
+                      Tout Replier
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsUpDown className="h-4 w-4" />
+                      Tout Déplier
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" size="sm">
+                  Ajouter un Article
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -244,6 +280,11 @@ const RFQDetails = () => {
                           <Label>Désignation *</Label>
                           <Input value={item.designation} />
                         </div>
+
+                        <div className="space-y-2">
+                          <Label>Part Number / Référence Produit</Label>
+                          <Input value={item.partNumber || ""} placeholder="Ex: SW-24P-POE+" />
+                        </div>
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -263,13 +304,18 @@ const RFQDetails = () => {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Prix Unitaire ({item.priceCurrency})</Label>
-                            <Input type="number" value={item.unitPriceForeign} />
+                            <Label>Prix Achat Unit. ({item.priceCurrency})</Label>
+                            <Input type="number" value={item.costUnitForeign} className="text-red-600 font-semibold" />
                           </div>
                           <div className="space-y-2">
-                            <Label>Taux de Change</Label>
-                            <Input type="number" value={item.priceFxToBase} />
+                            <Label>Prix Vente Unit. ({item.priceCurrency})</Label>
+                            <Input type="number" value={item.unitPriceForeign} className="text-green-600 font-semibold" />
                           </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Taux de Change vers {rfq.baseCurrency}</Label>
+                          <Input type="number" value={item.priceFxToBase} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -279,70 +325,97 @@ const RFQDetails = () => {
                           </div>
                           <div className="space-y-2">
                             <Label>Référence Fournisseur</Label>
-                            <Input value={item.supplierRef || ""} />
+                            <Input value={item.supplierRef || ""} placeholder="Optionnel" />
                           </div>
                         </div>
+
+                        {item.itemType === 'product' && (
+                          <div className="grid grid-cols-2 gap-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Transport</Label>
+                              <Input type="number" defaultValue={0} placeholder="0" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Douane</Label>
+                              <Input type="number" defaultValue={0} placeholder="0" />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Right Column - Calculations */}
                       <div className="bg-muted/30 rounded-lg p-6 space-y-4">
                         <div className="flex items-center gap-2 mb-4">
                           <Calculator className="h-5 w-5 text-primary" />
-                          <h3 className="font-semibold text-lg">Calculs</h3>
+                          <h3 className="font-semibold text-lg">Calculs Automatiques</h3>
                         </div>
 
                         <div className="space-y-3">
-                          <div className="flex justify-between items-center p-3 bg-background rounded">
-                            <span className="text-sm text-muted-foreground">Prix Unitaire (Base)</span>
-                            <span className="font-semibold">
-                              {formatCurrency(item.unitPriceForeign * item.priceFxToBase, rfq.baseCurrency)}
-                            </span>
-                          </div>
-
-                          <div className="flex justify-between items-center p-3 bg-background rounded">
-                            <span className="text-sm text-muted-foreground">Montant Brut</span>
-                            <span className="font-semibold">
-                              {formatCurrency(item.unitPriceForeign * item.quantity * item.priceFxToBase, rfq.baseCurrency)}
-                            </span>
-                          </div>
-
-                          {item.discountRate && (
-                            <div className="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-950/20 rounded">
-                              <span className="text-sm text-muted-foreground">Remise ({item.discountRate}%)</span>
-                              <span className="font-semibold text-orange-600">
-                                -{formatCurrency(
-                                  (item.unitPriceForeign * item.quantity * item.priceFxToBase * item.discountRate) / 100,
-                                  rfq.baseCurrency
-                                )}
-                              </span>
+                          <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded border border-red-200 dark:border-red-900">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-medium text-red-700 dark:text-red-400">ACHAT</span>
                             </div>
-                          )}
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Prix Unit. ({rfq.baseCurrency})</span>
+                                <span className="font-semibold text-red-600">
+                                  {formatCurrency(item.costUnitForeign * item.priceFxToBase, rfq.baseCurrency)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm font-medium">Total Achat</span>
+                                <span className="font-bold text-red-600">
+                                  {formatCurrency(item.costUnitForeign * item.quantity * item.priceFxToBase, rfq.baseCurrency)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-900">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs font-medium text-green-700 dark:text-green-400">VENTE</span>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Prix Unit. ({rfq.baseCurrency})</span>
+                                <span className="font-semibold text-green-600">
+                                  {formatCurrency(item.unitPriceForeign * item.priceFxToBase, rfq.baseCurrency)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Montant Brut</span>
+                                <span className="font-semibold text-green-600">
+                                  {formatCurrency(item.unitPriceForeign * item.quantity * item.priceFxToBase, rfq.baseCurrency)}
+                                </span>
+                              </div>
+                              {item.discountRate && (
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">Remise ({item.discountRate}%)</span>
+                                  <span className="font-semibold text-orange-600">
+                                    -{formatCurrency(
+                                      (item.unitPriceForeign * item.quantity * item.priceFxToBase * item.discountRate) / 100,
+                                      rfq.baseCurrency
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between pt-2 border-t">
+                                <span className="text-sm font-medium">Total Vente HT</span>
+                                <span className="font-bold text-green-600">
+                                  {formatCurrency(lineTotal, rfq.baseCurrency)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
 
                           <div className="flex justify-between items-center p-4 bg-primary/10 rounded border-2 border-primary/20">
-                            <span className="font-semibold">Total Ligne HT</span>
+                            <span className="font-semibold">Marge Ligne</span>
                             <span className="text-xl font-bold text-primary">
-                              {formatCurrency(lineTotal, rfq.baseCurrency)}
+                              {formatCurrency(
+                                lineTotal - (item.costUnitForeign * item.quantity * item.priceFxToBase),
+                                rfq.baseCurrency
+                              )}
                             </span>
-                          </div>
-
-                          <div className="pt-3 mt-3 border-t space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Coût Unitaire</span>
-                              <span>{formatCurrency(item.costUnitForeign * item.priceFxToBase, rfq.baseCurrency)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Coût Total</span>
-                              <span>{formatCurrency(item.costUnitForeign * item.quantity * item.priceFxToBase, rfq.baseCurrency)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-semibold text-green-600">
-                              <span>Marge Ligne</span>
-                              <span>
-                                {formatCurrency(
-                                  lineTotal - (item.costUnitForeign * item.quantity * item.priceFxToBase),
-                                  rfq.baseCurrency
-                                )}
-                              </span>
-                            </div>
                           </div>
                         </div>
                       </div>
@@ -360,6 +433,11 @@ const RFQDetails = () => {
                           <Label>Désignation *</Label>
                           <Input value={item.designation} />
                         </div>
+
+                        <div className="space-y-2">
+                          <Label>Part Number</Label>
+                          <Input value={item.partNumber || ""} />
+                        </div>
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
@@ -372,9 +450,15 @@ const RFQDetails = () => {
                           </div>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>Prix Unitaire ({item.priceCurrency})</Label>
-                          <Input type="number" value={item.unitPriceForeign} />
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>Prix Achat</Label>
+                            <Input type="number" value={item.costUnitForeign} className="text-red-600" />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Prix Vente</Label>
+                            <Input type="number" value={item.unitPriceForeign} className="text-green-600" />
+                          </div>
                         </div>
                       </div>
 
@@ -391,23 +475,27 @@ const RFQDetails = () => {
                         </CollapsibleTrigger>
                         <CollapsibleContent className="mt-4">
                           <div className="bg-muted/30 rounded-lg p-4 space-y-3">
-                            <div className="flex justify-between items-center p-2 bg-background rounded">
-                              <span className="text-sm text-muted-foreground">Total Ligne HT</span>
-                              <span className="font-bold text-primary">
+                            <div className="flex justify-between items-center p-2 bg-red-50 dark:bg-red-950/20 rounded">
+                              <span className="text-sm font-medium">Total Achat</span>
+                              <span className="font-bold text-red-600">
+                                {formatCurrency(item.costUnitForeign * item.quantity * item.priceFxToBase, rfq.baseCurrency)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center p-2 bg-green-50 dark:bg-green-950/20 rounded">
+                              <span className="text-sm font-medium">Total Vente HT</span>
+                              <span className="font-bold text-green-600">
                                 {formatCurrency(lineTotal, rfq.baseCurrency)}
                               </span>
                             </div>
-                            {item.discountRate && (
-                              <div className="flex justify-between items-center p-2 bg-background rounded">
-                                <span className="text-sm text-muted-foreground">Remise</span>
-                                <span className="text-orange-600">
-                                  -{formatCurrency(
-                                    (item.unitPriceForeign * item.quantity * item.priceFxToBase * item.discountRate) / 100,
-                                    rfq.baseCurrency
-                                  )}
-                                </span>
-                              </div>
-                            )}
+                            <div className="flex justify-between items-center p-2 bg-primary/10 rounded">
+                              <span className="text-sm font-semibold">Marge</span>
+                              <span className="font-bold text-primary">
+                                {formatCurrency(
+                                  lineTotal - (item.costUnitForeign * item.quantity * item.priceFxToBase),
+                                  rfq.baseCurrency
+                                )}
+                              </span>
+                            </div>
                           </div>
                         </CollapsibleContent>
                       </Collapsible>
