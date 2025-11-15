@@ -50,8 +50,9 @@ interface RFQItem {
   billingCycleCount?: number;
   recurringPrice?: number;
   setupFee?: number;
-  requiresTransport?: boolean;
-  requiresCustoms?: boolean;
+  transportCost?: number;
+  customsDutyRate?: number;
+  isPerpetual?: boolean;
 }
 
 const RFQDetails = () => {
@@ -62,8 +63,9 @@ const RFQDetails = () => {
   const [items, setItems] = useState<RFQItem[]>(mockRFQDetails.items.map(item => ({
     ...item,
     margin: 10,
-    requiresTransport: item.itemType === 'product',
-    requiresCustoms: item.itemType === 'product'
+    transportCost: item.itemType === 'product' ? 0 : undefined,
+    customsDutyRate: item.itemType === 'product' ? 0 : undefined,
+    isPerpetual: item.itemType === 'subscription' ? false : undefined
   })));
 
   const rfq = mockRFQDetails;
@@ -106,16 +108,33 @@ const RFQDetails = () => {
       : item.discountAmount || 0;
     
     const costAfterDiscount = totalCost - supplierDiscount;
-    const marginAmount = costAfterDiscount * ((item.margin || 0) / 100);
-    const sellingPrice = costAfterDiscount + marginAmount;
+    
+    // Add transport and customs for products
+    const transportCost = item.transportCost || 0;
+    const customsDuty = item.customsDutyRate 
+      ? costAfterDiscount * (item.customsDutyRate / 100) 
+      : 0;
+    
+    const totalCostWithImport = costAfterDiscount + transportCost + customsDuty;
+    const marginAmount = totalCostWithImport * ((item.margin || 0) / 100);
+    const sellingPrice = totalCostWithImport + marginAmount;
+    
+    // Calculate tax on selling price
+    const taxAmount = sellingPrice * ((rfq.globalTaxRate || 0) / 100);
+    const sellingPriceInclTax = sellingPrice + taxAmount;
     
     return {
       costInLocalCurrency,
       totalCost,
       supplierDiscount,
       costAfterDiscount,
+      transportCost,
+      customsDuty,
+      totalCostWithImport,
       marginAmount,
       sellingPrice,
+      taxAmount,
+      sellingPriceInclTax,
       marginRate: item.margin || 0
     };
   };
@@ -124,31 +143,30 @@ const RFQDetails = () => {
     let totalCost = 0;
     let totalSelling = 0;
     let totalMargin = 0;
+    let totalTransport = 0;
+    let totalCustoms = 0;
+    let totalTax = 0;
     
     items.forEach(item => {
       const itemTotals = calculateItemTotals(item);
-      totalCost += itemTotals.costAfterDiscount;
+      totalCost += itemTotals.totalCostWithImport;
       totalSelling += itemTotals.sellingPrice;
       totalMargin += itemTotals.marginAmount;
+      totalTransport += itemTotals.transportCost;
+      totalCustoms += itemTotals.customsDuty;
+      totalTax += itemTotals.taxAmount;
     });
     
-    const transport = rfq.freight || 0;
-    const customs = rfq.customs || 0;
-    totalCost += transport + customs;
-    totalSelling += transport + customs;
-    
-    const taxRate = rfq.globalTaxRate || 0;
-    const taxAmount = totalSelling * (taxRate / 100);
-    const grandTotal = totalSelling + taxAmount;
+    const grandTotal = totalSelling + totalTax;
     
     return {
       totalCost,
       totalSelling,
       totalMargin,
       marginRate: totalCost > 0 ? (totalMargin / totalCost) * 100 : 0,
-      transport,
-      customs,
-      taxAmount,
+      totalTransport,
+      totalCustoms,
+      totalTax,
       grandTotal
     };
   };
@@ -166,22 +184,23 @@ const RFQDetails = () => {
 
   return (
     <AppLayout>
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col overflow-hidden">
         {/* Header - Fixed */}
-        <div className="p-6 border-b bg-card">
+        <div className="flex-shrink-0 p-6 border-b bg-gradient-to-r from-card via-primary/5 to-card shadow-md">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => navigate("/rfq")}
+                className="shadow-sm"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-3xl font-bold text-foreground">{rfq.code}</h1>
-                  <Badge variant={getStatusVariant(rfq.status)}>
+                  <Badge variant={getStatusVariant(rfq.status)} className="shadow-sm">
                     {rfq.status}
                   </Badge>
                 </div>
@@ -191,11 +210,11 @@ const RFQDetails = () => {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 shadow-sm">
                 <FileText className="h-4 w-4" />
                 Exporter PDF
               </Button>
-              <Button className="gap-2">
+              <Button className="gap-2 shadow-sm">
                 <Save className="h-4 w-4" />
                 Enregistrer
               </Button>
@@ -238,34 +257,38 @@ const RFQDetails = () => {
         </div>
 
         {/* Totaux - Sticky */}
-        <div className="sticky top-0 z-20 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-b shadow-md p-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Total Achat</p>
+        <div className="flex-shrink-0 bg-gradient-to-br from-primary/15 via-accent/10 to-success/10 border-b-2 border-primary/20 shadow-lg p-6">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">💰 Total Achat</p>
               <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalCost)}</p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Marge</p>
+            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">📈 Marge</p>
               <p className="text-lg font-bold text-success">{formatCurrency(totals.totalMargin)}</p>
-              <p className="text-xs text-success">({totals.marginRate.toFixed(1)}%)</p>
+              <p className="text-xs text-success font-medium">({totals.marginRate.toFixed(1)}%)</p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Sous-total Vente</p>
-              <p className="text-lg font-bold text-accent">{formatCurrency(totals.totalSelling)}</p>
+            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">🚚 Transport</p>
+              <p className="text-lg font-bold text-accent">{formatCurrency(totals.totalTransport)}</p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Taxes ({rfq.globalTaxRate}%)</p>
-              <p className="text-lg font-bold text-warning">{formatCurrency(totals.taxAmount)}</p>
+            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">🛃 Douane</p>
+              <p className="text-lg font-bold text-warning">{formatCurrency(totals.totalCustoms)}</p>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Total Général</p>
+            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({rfq.globalTaxRate}%)</p>
+              <p className="text-lg font-bold text-destructive">{formatCurrency(totals.totalTax)}</p>
+            </div>
+            <div className="text-center p-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-sm rounded-lg shadow-md border-2 border-primary/30">
+              <p className="text-xs font-bold text-primary mb-1">💵 TOTAL TTC</p>
               <p className="text-2xl font-bold text-primary">{formatCurrency(totals.grandTotal)}</p>
             </div>
           </div>
         </div>
 
         {/* Articles - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-background to-muted/20">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-foreground">Articles ({items.length})</h2>
             <Button variant="outline" size="sm" className="gap-2">
@@ -279,8 +302,8 @@ const RFQDetails = () => {
             const itemTotals = calculateItemTotals(item);
 
             return (
-              <Card key={item.id} className="border-2 hover:border-primary/50 transition-all">
-                <CardHeader className="pb-3">
+              <Card key={item.id} className="border-2 hover:border-primary/50 transition-all shadow-md hover:shadow-lg bg-gradient-to-br from-card to-card/50">
+                <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-accent/5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3 flex-1">
                       <div className="mt-1">
@@ -293,14 +316,26 @@ const RFQDetails = () => {
                           </Badge>
                           <code className="text-xs text-muted-foreground">{item.partNumber}</code>
                         </div>
-                        <h3 className="font-semibold text-foreground">{item.designation}</h3>
+                        <h3 className="font-semibold text-foreground text-lg">{item.designation}</h3>
                         {!isExpanded && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Qté: {item.quantity} {item.unit} • Marge: {item.margin}% • 
-                            <span className="text-success font-medium ml-1">
-                              {formatCurrency(itemTotals.sellingPrice)}
-                            </span>
-                          </p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 p-3 bg-muted/30 rounded-lg">
+                            <div>
+                              <p className="text-xs text-muted-foreground">Quantité</p>
+                              <p className="text-sm font-medium text-foreground">{item.quantity} {item.unit}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Prix unitaire HT</p>
+                              <p className="text-sm font-medium text-accent">{formatCurrency(itemTotals.sellingPrice / item.quantity)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Prix total HT</p>
+                              <p className="text-sm font-medium text-success">{formatCurrency(itemTotals.sellingPrice)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">Prix total TTC</p>
+                              <p className="text-base font-bold text-primary">{formatCurrency(itemTotals.sellingPriceInclTax)}</p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -375,79 +410,130 @@ const RFQDetails = () => {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label className="text-xs">Remise fournisseur (%)</Label>
+                            <Label className="text-xs text-warning">💸 Remise fournisseur (%)</Label>
                             <Input 
                               type="number" 
                               value={item.discountRate || 0}
-                              className="mt-1"
+                              className="mt-1 border-warning/50 focus:border-warning"
                             />
                           </div>
                           <div>
-                            <Label className="text-xs">Marge (%)</Label>
+                            <Label className="text-xs text-success">📊 Ma marge (%)</Label>
                             <Input 
                               type="number" 
                               value={item.margin || 0}
-                              className="mt-1 border-success"
+                              className="mt-1 border-success/50 focus:border-success font-semibold"
                             />
                           </div>
                         </div>
 
-                        {item.itemType === 'subscription' && (
+                        {item.itemType === 'product' && (
                           <>
                             <Separator />
-                            <div className="space-y-3">
-                              <h5 className="font-medium text-xs text-muted-foreground">Licence / Abonnement</h5>
+                            <div className="space-y-3 p-3 bg-accent/5 rounded-lg">
+                              <h5 className="font-medium text-sm text-accent flex items-center gap-2">
+                                🚢 Frais d'import
+                              </h5>
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                  <Label className="text-xs">Date début</Label>
-                                  <Input type="date" className="mt-1" />
+                                  <Label className="text-xs">🚚 Transport ({rfq.baseCurrency})</Label>
+                                  <Input 
+                                    type="number" 
+                                    value={item.transportCost || 0}
+                                    className="mt-1"
+                                  />
                                 </div>
                                 <div>
-                                  <Label className="text-xs">Date fin</Label>
-                                  <Input type="date" className="mt-1" />
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label className="text-xs">Cycle</Label>
-                                  <Select>
-                                    <SelectTrigger className="mt-1">
-                                      <SelectValue placeholder="Cycle" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="month">Mensuel</SelectItem>
-                                      <SelectItem value="year">Annuel</SelectItem>
-                                      <SelectItem value="day">Quotidien</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div>
-                                  <Label className="text-xs">Prix récurrent</Label>
-                                  <Input type="number" className="mt-1" />
+                                  <Label className="text-xs">🛃 Taux de douane (%)</Label>
+                                  <Input 
+                                    type="number" 
+                                    value={item.customsDutyRate || 0}
+                                    className="mt-1"
+                                  />
                                 </div>
                               </div>
                             </div>
                           </>
                         )}
 
-                        {item.itemType === 'product' && (
+                        {item.itemType === 'subscription' && (
                           <>
                             <Separator />
-                            <div className="space-y-2">
-                              <h5 className="font-medium text-xs text-muted-foreground">Import</h5>
-                              <div className="flex items-center gap-4">
-                                <label className="flex items-center gap-2 text-xs">
-                                  <input type="checkbox" checked={item.requiresTransport} />
-                                  Transport
-                                </label>
-                                <label className="flex items-center gap-2 text-xs">
-                                  <input type="checkbox" checked={item.requiresCustoms} />
-                                  Douane
+                            <div className="space-y-3 p-3 bg-primary/5 rounded-lg">
+                              <h5 className="font-medium text-sm text-primary flex items-center gap-2">
+                                🔑 Licence / Abonnement
+                              </h5>
+                              
+                              <div className="flex items-center gap-4 mb-3">
+                                <label className="flex items-center gap-2 text-sm font-medium">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={item.isPerpetual || false}
+                                    className="rounded"
+                                  />
+                                  Licence perpétuelle
                                 </label>
                               </div>
+
+                              {!item.isPerpetual && (
+                                <>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs">📅 Date début</Label>
+                                      <Input 
+                                        type="date" 
+                                        value={item.periodStart || ''}
+                                        className="mt-1" 
+                                      />
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">📅 Date fin</Label>
+                                      <Input 
+                                        type="date" 
+                                        value={item.periodEnd || ''}
+                                        className="mt-1" 
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <Label className="text-xs">🔄 Cycle de facturation</Label>
+                                      <Select value={item.billingCycleUnit || 'month'}>
+                                        <SelectTrigger className="mt-1">
+                                          <SelectValue placeholder="Cycle" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="day">Quotidien</SelectItem>
+                                          <SelectItem value="month">Mensuel</SelectItem>
+                                          <SelectItem value="year">Annuel</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">💰 Prix récurrent</Label>
+                                      <Input 
+                                        type="number" 
+                                        value={item.recurringPrice || 0}
+                                        className="mt-1" 
+                                      />
+                                    </div>
+                                  </div>
+                                  {item.setupFee !== undefined && (
+                                    <div>
+                                      <Label className="text-xs">⚡ Frais d'installation</Label>
+                                      <Input 
+                                        type="number" 
+                                        value={item.setupFee}
+                                        className="mt-1" 
+                                      />
+                                    </div>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </>
                         )}
+
 
                         <div>
                           <Label className="text-xs">Spécifications</Label>
@@ -460,59 +546,106 @@ const RFQDetails = () => {
 
                       {/* Section Calculs */}
                       <div className="space-y-4">
-                        <h4 className="font-semibold text-sm text-accent flex items-center gap-2">
+                        <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
                           💰 Calculs automatiques
                         </h4>
 
-                        <Card className="bg-muted/30">
+                        <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-2 border-primary/20 shadow-md">
                           <CardContent className="p-4 space-y-3">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Prix unitaire (devise):</span>
-                              <span className="font-medium">{item.costUnitForeign} {item.priceCurrency}</span>
+                            {/* Prix d'achat */}
+                            <div className="space-y-2 p-3 bg-card/60 rounded-lg">
+                              <h5 className="text-xs font-semibold text-destructive uppercase tracking-wide">📥 Prix d'achat</h5>
+                              
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Prix unitaire (devise):</span>
+                                <span className="font-medium">{item.costUnitForeign} {item.priceCurrency}</span>
+                              </div>
+                              
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Prix unitaire ({rfq.baseCurrency}):</span>
+                                <span className="font-medium">{formatCurrency(itemTotals.costInLocalCurrency)}</span>
+                              </div>
+
+                              <Separator />
+
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Total achat brut:</span>
+                                <span className="font-medium">{formatCurrency(itemTotals.totalCost)}</span>
+                              </div>
+
+                              <div className="flex justify-between text-sm text-warning">
+                                <span>💸 Remise fournisseur ({item.discountRate || 0}%):</span>
+                                <span className="font-medium">- {formatCurrency(itemTotals.supplierDiscount)}</span>
+                              </div>
+
+                              <div className="flex justify-between text-sm font-semibold">
+                                <span>Total achat net:</span>
+                                <span>{formatCurrency(itemTotals.costAfterDiscount)}</span>
+                              </div>
+
+                              {item.itemType === 'product' && (
+                                <>
+                                  <Separator className="bg-accent/30" />
+                                  
+                                  {itemTotals.transportCost > 0 && (
+                                    <div className="flex justify-between text-sm text-accent">
+                                      <span>🚚 Transport:</span>
+                                      <span className="font-medium">+ {formatCurrency(itemTotals.transportCost)}</span>
+                                    </div>
+                                  )}
+
+                                  {itemTotals.customsDuty > 0 && (
+                                    <div className="flex justify-between text-sm text-warning">
+                                      <span>🛃 Douane ({item.customsDutyRate}%):</span>
+                                      <span className="font-medium">+ {formatCurrency(itemTotals.customsDuty)}</span>
+                                    </div>
+                                  )}
+
+                                  <div className="flex justify-between text-sm font-semibold text-destructive">
+                                    <span>Total achat avec import:</span>
+                                    <span>{formatCurrency(itemTotals.totalCostWithImport)}</span>
+                                  </div>
+                                </>
+                              )}
                             </div>
-                            
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Prix unitaire ({rfq.baseCurrency}):</span>
-                              <span className="font-medium">{formatCurrency(itemTotals.costInLocalCurrency)}</span>
-                            </div>
 
-                            <Separator />
+                            <Separator className="bg-gradient-to-r from-destructive/30 via-success/30 to-destructive/30" />
 
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Total achat brut:</span>
-                              <span className="font-medium">{formatCurrency(itemTotals.totalCost)}</span>
-                            </div>
+                            {/* Prix de vente */}
+                            <div className="space-y-2 p-3 bg-card/60 rounded-lg">
+                              <h5 className="text-xs font-semibold text-success uppercase tracking-wide">📤 Prix de vente</h5>
 
-                            <div className="flex justify-between text-sm text-warning">
-                              <span>Remise fournisseur ({item.discountRate || 0}%):</span>
-                              <span className="font-medium">- {formatCurrency(itemTotals.supplierDiscount)}</span>
-                            </div>
+                              <div className="flex justify-between text-sm text-success">
+                                <span>📊 Ma marge ({itemTotals.marginRate}%):</span>
+                                <span className="font-semibold">+ {formatCurrency(itemTotals.marginAmount)}</span>
+                              </div>
 
-                            <div className="flex justify-between text-sm font-semibold">
-                              <span>Total achat net:</span>
-                              <span>{formatCurrency(itemTotals.costAfterDiscount)}</span>
-                            </div>
+                              <Separator className="bg-success/20" />
 
-                            <Separator className="bg-success/20" />
+                              <div className="flex justify-between text-base font-bold text-accent">
+                                <span>Prix de vente HT:</span>
+                                <span>{formatCurrency(itemTotals.sellingPrice)}</span>
+                              </div>
 
-                            <div className="flex justify-between text-sm text-success">
-                              <span>Marge ({itemTotals.marginRate}%):</span>
-                              <span className="font-semibold">+ {formatCurrency(itemTotals.marginAmount)}</span>
-                            </div>
+                              <div className="flex justify-between text-sm text-primary">
+                                <span>📊 Taxe ({rfq.globalTaxRate}%):</span>
+                                <span className="font-medium">+ {formatCurrency(itemTotals.taxAmount)}</span>
+                              </div>
 
-                            <Separator className="bg-primary/20" />
+                              <Separator className="bg-primary/30" />
 
-                            <div className="flex justify-between text-base font-bold text-primary">
-                              <span>Prix de vente total:</span>
-                              <span>{formatCurrency(itemTotals.sellingPrice)}</span>
+                              <div className="flex justify-between text-lg font-bold text-primary">
+                                <span>💵 Prix de vente TTC:</span>
+                                <span>{formatCurrency(itemTotals.sellingPriceInclTax)}</span>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
 
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1 gap-2">
+                          <Button variant="destructive" size="sm" className="flex-1 gap-2 shadow-sm">
                             <Trash2 className="h-3 w-3" />
-                            Supprimer
+                            Supprimer l'article
                           </Button>
                         </div>
                       </div>
@@ -523,45 +656,15 @@ const RFQDetails = () => {
             );
           })}
 
-          {/* Frais globaux */}
-          <Card className="border-dashed border-2">
-            <CardHeader>
-              <CardTitle className="text-sm">Frais additionnels globaux</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label className="text-xs">Transport global</Label>
-                <Input 
-                  type="number" 
-                  defaultValue={rfq.freight}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Douane globale</Label>
-                <Input 
-                  type="number" 
-                  defaultValue={rfq.customs}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-xs">Taux de taxe global (%)</Label>
-                <Input 
-                  type="number" 
-                  defaultValue={rfq.globalTaxRate}
-                  className="mt-1"
-                />
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Notes internes</CardTitle>
+          <Card className="border-2 border-muted shadow-sm">
+            <CardHeader className="bg-muted/20">
+              <CardTitle className="text-sm flex items-center gap-2">
+                📝 Notes internes
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-4">
               <Textarea 
                 defaultValue={rfq.internalNotes || ''}
                 className="min-h-[100px]"
