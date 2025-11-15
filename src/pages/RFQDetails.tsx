@@ -60,13 +60,22 @@ const RFQDetails = () => {
   const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [globalFxRate, setGlobalFxRate] = useState(600);
+  const [globalTaxRate, setGlobalTaxRate] = useState(mockRFQDetails.globalTaxRate || 18);
   const [items, setItems] = useState<RFQItem[]>(mockRFQDetails.items.map(item => ({
     ...item,
     margin: 10,
-    transportCost: item.itemType === 'product' ? 0 : undefined,
-    customsDutyRate: item.itemType === 'product' ? 0 : undefined,
-    isPerpetual: item.itemType === 'subscription' ? false : undefined
+    transportCost: item.itemType === 'product' ? (item.transportCost || 0) : undefined,
+    customsDutyRate: item.itemType === 'product' ? (item.customsDutyRate || 0) : undefined,
+    isPerpetual: item.itemType === 'subscription' ? (item.isPerpetual || false) : undefined
   })));
+
+  const updateItem = (itemId: number, updates: Partial<RFQItem>) => {
+    setItems(prevItems =>
+      prevItems.map(item =>
+        item.id === itemId ? { ...item, ...updates } : item
+      )
+    );
+  };
 
   const rfq = mockRFQDetails;
 
@@ -120,7 +129,7 @@ const RFQDetails = () => {
     const sellingPrice = totalCostWithImport + marginAmount;
     
     // Calculate tax on selling price
-    const taxAmount = sellingPrice * ((rfq.globalTaxRate || 0) / 100);
+    const taxAmount = sellingPrice * (globalTaxRate / 100);
     const sellingPriceInclTax = sellingPrice + taxAmount;
     
     return {
@@ -222,7 +231,7 @@ const RFQDetails = () => {
           </div>
 
           {/* Informations générales */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label className="text-xs text-muted-foreground">Date RFQ</Label>
               <Input type="date" defaultValue={rfq.rfqDate} className="mt-1" />
@@ -245,12 +254,23 @@ const RFQDetails = () => {
               </Select>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Taux de change global</Label>
+              <Label className="text-xs text-muted-foreground">💱 Taux de change global</Label>
               <Input 
                 type="number" 
+                step="0.01"
                 value={globalFxRate} 
                 onChange={(e) => setGlobalFxRate(parseFloat(e.target.value) || 0)}
-                className="mt-1"
+                className="mt-1 font-semibold border-primary/50"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">📊 Taux de taxe global (%)</Label>
+              <Input 
+                type="number" 
+                step="0.01"
+                value={globalTaxRate} 
+                onChange={(e) => setGlobalTaxRate(parseFloat(e.target.value) || 0)}
+                className="mt-1 font-semibold border-primary/50"
               />
             </div>
           </div>
@@ -277,7 +297,7 @@ const RFQDetails = () => {
               <p className="text-lg font-bold text-warning">{formatCurrency(totals.totalCustoms)}</p>
             </div>
             <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({rfq.globalTaxRate}%)</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({globalTaxRate}%)</p>
               <p className="text-lg font-bold text-destructive">{formatCurrency(totals.totalTax)}</p>
             </div>
             <div className="text-center p-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-sm rounded-lg shadow-md border-2 border-primary/30">
@@ -372,7 +392,10 @@ const RFQDetails = () => {
                             <Label className="text-xs">Quantité</Label>
                             <Input 
                               type="number" 
+                              min="0"
+                              step="1"
                               value={item.quantity}
+                              onChange={(e) => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
                               className="mt-1"
                             />
                           </div>
@@ -380,14 +403,18 @@ const RFQDetails = () => {
                             <Label className="text-xs">Unité</Label>
                             <Input 
                               value={item.unit}
+                              onChange={(e) => updateItem(item.id, { unit: e.target.value })}
                               className="mt-1"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label className="text-xs">Devise</Label>
-                          <Select value={item.priceCurrency}>
+                          <Label className="text-xs">💱 Devise</Label>
+                          <Select 
+                            value={item.priceCurrency}
+                            onValueChange={(value) => updateItem(item.id, { priceCurrency: value })}
+                          >
                             <SelectTrigger className="mt-1">
                               <SelectValue />
                             </SelectTrigger>
@@ -400,11 +427,14 @@ const RFQDetails = () => {
                         </div>
 
                         <div>
-                          <Label className="text-xs">Prix d'achat unitaire (devise)</Label>
+                          <Label className="text-xs">💸 Prix d'achat unitaire (devise)</Label>
                           <Input 
                             type="number" 
+                            min="0"
+                            step="0.01"
                             value={item.costUnitForeign}
-                            className="mt-1"
+                            onChange={(e) => updateItem(item.id, { costUnitForeign: parseFloat(e.target.value) || 0 })}
+                            className="mt-1 border-destructive/50"
                           />
                         </div>
 
@@ -413,7 +443,11 @@ const RFQDetails = () => {
                             <Label className="text-xs text-warning">💸 Remise fournisseur (%)</Label>
                             <Input 
                               type="number" 
+                              min="0"
+                              max="100"
+                              step="0.1"
                               value={item.discountRate || 0}
+                              onChange={(e) => updateItem(item.id, { discountRate: parseFloat(e.target.value) || 0 })}
                               className="mt-1 border-warning/50 focus:border-warning"
                             />
                           </div>
@@ -421,7 +455,10 @@ const RFQDetails = () => {
                             <Label className="text-xs text-success">📊 Ma marge (%)</Label>
                             <Input 
                               type="number" 
+                              min="0"
+                              step="0.1"
                               value={item.margin || 0}
+                              onChange={(e) => updateItem(item.id, { margin: parseFloat(e.target.value) || 0 })}
                               className="mt-1 border-success/50 focus:border-success font-semibold"
                             />
                           </div>
@@ -439,7 +476,10 @@ const RFQDetails = () => {
                                   <Label className="text-xs">🚚 Transport ({rfq.baseCurrency})</Label>
                                   <Input 
                                     type="number" 
+                                    min="0"
+                                    step="100"
                                     value={item.transportCost || 0}
+                                    onChange={(e) => updateItem(item.id, { transportCost: parseFloat(e.target.value) || 0 })}
                                     className="mt-1"
                                   />
                                 </div>
@@ -447,7 +487,11 @@ const RFQDetails = () => {
                                   <Label className="text-xs">🛃 Taux de douane (%)</Label>
                                   <Input 
                                     type="number" 
+                                    min="0"
+                                    max="100"
+                                    step="0.1"
                                     value={item.customsDutyRate || 0}
+                                    onChange={(e) => updateItem(item.id, { customsDutyRate: parseFloat(e.target.value) || 0 })}
                                     className="mt-1"
                                   />
                                 </div>
@@ -465,11 +509,12 @@ const RFQDetails = () => {
                               </h5>
                               
                               <div className="flex items-center gap-4 mb-3">
-                                <label className="flex items-center gap-2 text-sm font-medium">
+                                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
                                   <input 
                                     type="checkbox" 
                                     checked={item.isPerpetual || false}
-                                    className="rounded"
+                                    onChange={(e) => updateItem(item.id, { isPerpetual: e.target.checked })}
+                                    className="rounded cursor-pointer"
                                   />
                                   Licence perpétuelle
                                 </label>
@@ -483,6 +528,7 @@ const RFQDetails = () => {
                                       <Input 
                                         type="date" 
                                         value={item.periodStart || ''}
+                                        onChange={(e) => updateItem(item.id, { periodStart: e.target.value })}
                                         className="mt-1" 
                                       />
                                     </div>
@@ -491,6 +537,7 @@ const RFQDetails = () => {
                                       <Input 
                                         type="date" 
                                         value={item.periodEnd || ''}
+                                        onChange={(e) => updateItem(item.id, { periodEnd: e.target.value })}
                                         className="mt-1" 
                                       />
                                     </div>
@@ -498,7 +545,10 @@ const RFQDetails = () => {
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
                                       <Label className="text-xs">🔄 Cycle de facturation</Label>
-                                      <Select value={item.billingCycleUnit || 'month'}>
+                                      <Select 
+                                        value={item.billingCycleUnit || 'month'}
+                                        onValueChange={(value) => updateItem(item.id, { billingCycleUnit: value })}
+                                      >
                                         <SelectTrigger className="mt-1">
                                           <SelectValue placeholder="Cycle" />
                                         </SelectTrigger>
@@ -513,7 +563,10 @@ const RFQDetails = () => {
                                       <Label className="text-xs">💰 Prix récurrent</Label>
                                       <Input 
                                         type="number" 
+                                        min="0"
+                                        step="0.01"
                                         value={item.recurringPrice || 0}
+                                        onChange={(e) => updateItem(item.id, { recurringPrice: parseFloat(e.target.value) || 0 })}
                                         className="mt-1" 
                                       />
                                     </div>
@@ -523,7 +576,10 @@ const RFQDetails = () => {
                                       <Label className="text-xs">⚡ Frais d'installation</Label>
                                       <Input 
                                         type="number" 
+                                        min="0"
+                                        step="100"
                                         value={item.setupFee}
+                                        onChange={(e) => updateItem(item.id, { setupFee: parseFloat(e.target.value) || 0 })}
                                         className="mt-1" 
                                       />
                                     </div>
@@ -536,10 +592,22 @@ const RFQDetails = () => {
 
 
                         <div>
-                          <Label className="text-xs">Spécifications</Label>
+                          <Label className="text-xs">📋 Spécifications</Label>
                           <Textarea 
                             value={item.specifications || ''}
+                            onChange={(e) => updateItem(item.id, { specifications: e.target.value })}
                             className="mt-1 min-h-[60px]"
+                            placeholder="Spécifications techniques du produit..."
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">📝 Notes</Label>
+                          <Textarea 
+                            value={item.notes || ''}
+                            onChange={(e) => updateItem(item.id, { notes: e.target.value })}
+                            className="mt-1 min-h-[60px]"
+                            placeholder="Notes supplémentaires..."
                           />
                         </div>
                       </div>
@@ -628,7 +696,7 @@ const RFQDetails = () => {
                               </div>
 
                               <div className="flex justify-between text-sm text-primary">
-                                <span>📊 Taxe ({rfq.globalTaxRate}%):</span>
+                                <span>📊 Taxe ({globalTaxRate}%):</span>
                                 <span className="font-medium">+ {formatCurrency(itemTotals.taxAmount)}</span>
                               </div>
 
