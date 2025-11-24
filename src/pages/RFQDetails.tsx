@@ -193,7 +193,7 @@ const RFQDetails = () => {
 
   return (
     <AppLayout>
-      <div className="h-full flex flex-col overflow-hidden">
+      <div className="min-h-screen flex flex-col">
         {/* Header - Fixed */}
         <div className="flex-shrink-0 p-6 border-b bg-gradient-to-r from-card via-primary/5 to-card shadow-md">
           <div className="flex items-center justify-between mb-4">
@@ -308,438 +308,472 @@ const RFQDetails = () => {
         </div>
 
         {/* Articles - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-background to-muted/20">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-foreground">Articles ({items.length})</h2>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Ajouter un article
-            </Button>
-          </div>
+        <div className="flex-1 bg-gradient-to-b from-background to-muted/20">
+          <div className="relative px-6 pb-6">
+            <div className="sticky top-6">
+              <div className="h-[calc(100vh-7rem)] flex flex-col gap-4 bg-gradient-to-b from-background/80 to-muted/30 rounded-2xl shadow-sm border border-border/60 p-4">
+                <div className="flex items-center justify-between flex-shrink-0">
+                  <h2 className="text-xl font-semibold text-foreground">Articles ({items.length})</h2>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Ajouter un article
+                  </Button>
+                </div>
 
-          {items.map((item, index) => {
-            const isExpanded = expandedItems.has(item.id);
-            const itemTotals = calculateItemTotals(item);
+                <div className="flex-1 overflow-hidden">
+                  <div className="h-full space-y-4 pr-3 overflow-y-auto fancy-scroll">
+                    {items.map((item) => {
+                      const isExpanded = expandedItems.has(item.id);
+                      const itemTotals = calculateItemTotals(item);
 
-            return (
-              <Card key={item.id} className="border-2 hover:border-primary/50 transition-all shadow-md hover:shadow-lg bg-gradient-to-br from-card to-card/50">
-                <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-accent/5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="mt-1">
-                        {getItemIcon(item.itemType)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {item.itemType}
-                          </Badge>
-                          <code className="text-xs text-muted-foreground">{item.partNumber}</code>
-                        </div>
-                        <h3 className="font-semibold text-foreground text-lg">{item.designation}</h3>
-                        {!isExpanded && (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 p-3 bg-muted/30 rounded-lg">
-                            <div>
-                              <p className="text-xs text-muted-foreground">Quantité</p>
-                              <p className="text-sm font-medium text-foreground">{item.quantity} {item.unit}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Prix unitaire HT</p>
-                              <p className="text-sm font-medium text-accent">{formatCurrency(itemTotals.sellingPrice / item.quantity)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Prix total HT</p>
-                              <p className="text-sm font-medium text-success">{formatCurrency(itemTotals.sellingPrice)}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">Prix total TTC</p>
-                              <p className="text-base font-bold text-primary">{formatCurrency(itemTotals.sellingPriceInclTax)}</p>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleItem(item.id)}
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                {isExpanded && (
-                  <CardContent className="pt-0">
-                    <Separator className="mb-4" />
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Section Saisie */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                          📝 Informations de saisie
-                        </h4>
-                        
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs">Quantité</Label>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              step="1"
-                              value={item.quantity}
-                              onChange={(e) => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })}
-                              className="mt-1"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs">Unité</Label>
-                            <Input 
-                              value={item.unit}
-                              onChange={(e) => updateItem(item.id, { unit: e.target.value })}
-                              className="mt-1"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label className="text-xs">💱 Devise</Label>
-                          <Select 
-                            value={item.priceCurrency}
-                            onValueChange={(value) => updateItem(item.id, { priceCurrency: value })}
-                          >
-                            <SelectTrigger className="mt-1">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="XOF">XOF</SelectItem>
-                              <SelectItem value="USD">USD</SelectItem>
-                              <SelectItem value="EUR">EUR</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label className="text-xs">💸 Prix d'achat unitaire (devise)</Label>
-                          <Input 
-                            type="number" 
-                            min="0"
-                            step="0.01"
-                            value={item.costUnitForeign}
-                            onChange={(e) => updateItem(item.id, { costUnitForeign: parseFloat(e.target.value) || 0 })}
-                            className="mt-1 border-destructive/50"
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs text-warning">💸 Remise fournisseur (%)</Label>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              max="100"
-                              step="0.1"
-                              value={item.discountRate || 0}
-                              onChange={(e) => updateItem(item.id, { discountRate: parseFloat(e.target.value) || 0 })}
-                              className="mt-1 border-warning/50 focus:border-warning"
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-xs text-success">📊 Ma marge (%)</Label>
-                            <Input 
-                              type="number" 
-                              min="0"
-                              step="0.1"
-                              value={item.margin || 0}
-                              onChange={(e) => updateItem(item.id, { margin: parseFloat(e.target.value) || 0 })}
-                              className="mt-1 border-success/50 focus:border-success font-semibold"
-                            />
-                          </div>
-                        </div>
-
-                        {item.itemType === 'product' && (
-                          <>
-                            <Separator />
-                            <div className="space-y-3 p-3 bg-accent/5 rounded-lg">
-                              <h5 className="font-medium text-sm text-accent flex items-center gap-2">
-                                🚢 Frais d'import
-                              </h5>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <Label className="text-xs">🚚 Transport ({rfq.baseCurrency})</Label>
-                                  <Input 
-                                    type="number" 
-                                    min="0"
-                                    step="100"
-                                    value={item.transportCost || 0}
-                                    onChange={(e) => updateItem(item.id, { transportCost: parseFloat(e.target.value) || 0 })}
-                                    className="mt-1"
-                                  />
-                                </div>
-                                <div>
-                                  <Label className="text-xs">🛃 Taux de douane (%)</Label>
-                                  <Input 
-                                    type="number" 
-                                    min="0"
-                                    max="100"
-                                    step="0.1"
-                                    value={item.customsDutyRate || 0}
-                                    onChange={(e) => updateItem(item.id, { customsDutyRate: parseFloat(e.target.value) || 0 })}
-                                    className="mt-1"
-                                  />
+                      return (
+                        <Card
+                          key={item.id}
+                          className="border-2 hover:border-primary/50 transition-all shadow-md hover:shadow-lg bg-gradient-to-br from-card to-card/50"
+                        >
+                          <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-accent/5">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3 flex-1">
+                                <div className="mt-1">{getItemIcon(item.itemType)}</div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.itemType}
+                                    </Badge>
+                                    <code className="text-xs text-muted-foreground">{item.partNumber}</code>
+                                  </div>
+                                  <h3 className="font-semibold text-foreground text-lg">{item.designation}</h3>
+                                  {!isExpanded && (
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 p-3 bg-muted/30 rounded-lg">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Quantité</p>
+                                        <p className="text-sm font-medium text-foreground">
+                                          {item.quantity} {item.unit}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Prix unitaire HT</p>
+                                        <p className="text-sm font-medium text-accent">
+                                          {formatCurrency(itemTotals.sellingPrice / item.quantity)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Prix total HT</p>
+                                        <p className="text-sm font-medium text-success">
+                                          {formatCurrency(itemTotals.sellingPrice)}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <p className="text-xs text-muted-foreground">Prix total TTC</p>
+                                        <p className="text-base font-bold text-primary">
+                                          {formatCurrency(itemTotals.sellingPriceInclTax)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            </div>
-                          </>
-                        )}
 
-                        {item.itemType === 'subscription' && (
-                          <>
-                            <Separator />
-                            <div className="space-y-3 p-3 bg-primary/5 rounded-lg">
-                              <h5 className="font-medium text-sm text-primary flex items-center gap-2">
-                                🔑 Licence / Abonnement
-                              </h5>
-                              
-                              <div className="flex items-center gap-4 mb-3">
-                                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
-                                  <input 
-                                    type="checkbox" 
-                                    checked={item.isPerpetual || false}
-                                    onChange={(e) => updateItem(item.id, { isPerpetual: e.target.checked })}
-                                    className="rounded cursor-pointer"
-                                  />
-                                  Licence perpétuelle
-                                </label>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm" onClick={() => toggleItem(item.id)}>
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </div>
+                            </div>
+                          </CardHeader>
 
-                              {!item.isPerpetual && (
-                                <>
+                          {isExpanded && (
+                            <CardContent className="pt-0">
+                              <Separator className="mb-4" />
+
+                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                  <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                    📝 Informations de saisie
+                                  </h4>
+
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                      <Label className="text-xs">📅 Date début</Label>
-                                      <Input 
-                                        type="date" 
-                                        value={item.periodStart || ''}
-                                        onChange={(e) => updateItem(item.id, { periodStart: e.target.value })}
-                                        className="mt-1" 
+                                      <Label className="text-xs">Quantité</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        step="1"
+                                        value={item.quantity}
+                                        onChange={(e) =>
+                                          updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })
+                                        }
+                                        className="mt-1"
                                       />
                                     </div>
                                     <div>
-                                      <Label className="text-xs">📅 Date fin</Label>
-                                      <Input 
-                                        type="date" 
-                                        value={item.periodEnd || ''}
-                                        onChange={(e) => updateItem(item.id, { periodEnd: e.target.value })}
-                                        className="mt-1" 
+                                      <Label className="text-xs">Unité</Label>
+                                      <Input
+                                        value={item.unit}
+                                        onChange={(e) => updateItem(item.id, { unit: e.target.value })}
+                                        className="mt-1"
                                       />
                                     </div>
                                   </div>
+
+                                  <div>
+                                    <Label className="text-xs">💱 Devise</Label>
+                                    <Select
+                                      value={item.priceCurrency}
+                                      onValueChange={(value) => updateItem(item.id, { priceCurrency: value })}
+                                    >
+                                      <SelectTrigger className="mt-1">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="XOF">XOF</SelectItem>
+                                        <SelectItem value="USD">USD</SelectItem>
+                                        <SelectItem value="EUR">EUR</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-xs">💸 Prix d'achat unitaire (devise)</Label>
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      value={item.costUnitForeign}
+                                      onChange={(e) =>
+                                        updateItem(item.id, { costUnitForeign: parseFloat(e.target.value) || 0 })
+                                      }
+                                      className="mt-1 border-destructive/50"
+                                    />
+                                  </div>
+
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                      <Label className="text-xs">🔄 Cycle de facturation</Label>
-                                      <Select 
-                                        value={item.billingCycleUnit || 'month'}
-                                        onValueChange={(value) => updateItem(item.id, { billingCycleUnit: value })}
-                                      >
-                                        <SelectTrigger className="mt-1">
-                                          <SelectValue placeholder="Cycle" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="day">Quotidien</SelectItem>
-                                          <SelectItem value="month">Mensuel</SelectItem>
-                                          <SelectItem value="year">Annuel</SelectItem>
-                                        </SelectContent>
-                                      </Select>
+                                      <Label className="text-xs text-warning">💸 Remise fournisseur (%)</Label>
+                                      <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.1"
+                                        value={item.discountRate || 0}
+                                        onChange={(e) =>
+                                          updateItem(item.id, { discountRate: parseFloat(e.target.value) || 0 })
+                                        }
+                                        className="mt-1 border-warning/50 focus:border-warning"
+                                      />
                                     </div>
                                     <div>
-                                      <Label className="text-xs">💰 Prix récurrent</Label>
-                                      <Input 
-                                        type="number" 
+                                      <Label className="text-xs text-success">📊 Ma marge (%)</Label>
+                                      <Input
+                                        type="number"
                                         min="0"
-                                        step="0.01"
-                                        value={item.recurringPrice || 0}
-                                        onChange={(e) => updateItem(item.id, { recurringPrice: parseFloat(e.target.value) || 0 })}
-                                        className="mt-1" 
+                                        step="0.1"
+                                        value={item.margin || 0}
+                                        onChange={(e) => updateItem(item.id, { margin: parseFloat(e.target.value) || 0 })}
+                                        className="mt-1 border-success/50 focus:border-success font-semibold"
                                       />
                                     </div>
                                   </div>
-                                  {item.setupFee !== undefined && (
-                                    <div>
-                                      <Label className="text-xs">⚡ Frais d'installation</Label>
-                                      <Input 
-                                        type="number" 
-                                        min="0"
-                                        step="100"
-                                        value={item.setupFee}
-                                        onChange={(e) => updateItem(item.id, { setupFee: parseFloat(e.target.value) || 0 })}
-                                        className="mt-1" 
-                                      />
-                                    </div>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          </>
-                        )}
 
-
-                        <div>
-                          <Label className="text-xs">📋 Spécifications</Label>
-                          <Textarea 
-                            value={item.specifications || ''}
-                            onChange={(e) => updateItem(item.id, { specifications: e.target.value })}
-                            className="mt-1 min-h-[60px]"
-                            placeholder="Spécifications techniques du produit..."
-                          />
-                        </div>
-
-                        <div>
-                          <Label className="text-xs">📝 Notes</Label>
-                          <Textarea 
-                            value={item.notes || ''}
-                            onChange={(e) => updateItem(item.id, { notes: e.target.value })}
-                            className="mt-1 min-h-[60px]"
-                            placeholder="Notes supplémentaires..."
-                          />
-                        </div>
-                      </div>
-
-                      {/* Section Calculs */}
-                      <div className="space-y-4">
-                        <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
-                          💰 Calculs automatiques
-                        </h4>
-
-                        <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-2 border-primary/20 shadow-md">
-                          <CardContent className="p-4 space-y-3">
-                            {/* Prix d'achat */}
-                            <div className="space-y-2 p-3 bg-card/60 rounded-lg">
-                              <h5 className="text-xs font-semibold text-destructive uppercase tracking-wide">📥 Prix d'achat</h5>
-                              
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Prix unitaire (devise):</span>
-                                <span className="font-medium">{item.costUnitForeign} {item.priceCurrency}</span>
-                              </div>
-                              
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Prix unitaire ({rfq.baseCurrency}):</span>
-                                <span className="font-medium">{formatCurrency(itemTotals.costInLocalCurrency)}</span>
-                              </div>
-
-                              <Separator />
-
-                              <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Total achat brut:</span>
-                                <span className="font-medium">{formatCurrency(itemTotals.totalCost)}</span>
-                              </div>
-
-                              <div className="flex justify-between text-sm text-warning">
-                                <span>💸 Remise fournisseur ({item.discountRate || 0}%):</span>
-                                <span className="font-medium">- {formatCurrency(itemTotals.supplierDiscount)}</span>
-                              </div>
-
-                              <div className="flex justify-between text-sm font-semibold">
-                                <span>Total achat net:</span>
-                                <span>{formatCurrency(itemTotals.costAfterDiscount)}</span>
-                              </div>
-
-                              {item.itemType === 'product' && (
-                                <>
-                                  <Separator className="bg-accent/30" />
-                                  
-                                  {itemTotals.transportCost > 0 && (
-                                    <div className="flex justify-between text-sm text-accent">
-                                      <span>🚚 Transport:</span>
-                                      <span className="font-medium">+ {formatCurrency(itemTotals.transportCost)}</span>
-                                    </div>
+                                  {item.itemType === "product" && (
+                                    <>
+                                      <Separator />
+                                      <div className="space-y-3 p-3 bg-accent/5 rounded-lg">
+                                        <h5 className="font-medium text-sm text-accent flex items-center gap-2">
+                                          🚢 Frais d'import
+                                        </h5>
+                                        <div className="grid grid-cols-2 gap-3">
+                                          <div>
+                                            <Label className="text-xs">🚚 Transport ({rfq.baseCurrency})</Label>
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              step="100"
+                                              value={item.transportCost || 0}
+                                              onChange={(e) =>
+                                                updateItem(item.id, { transportCost: parseFloat(e.target.value) || 0 })
+                                              }
+                                              className="mt-1"
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label className="text-xs">🛃 Taux de douane (%)</Label>
+                                            <Input
+                                              type="number"
+                                              min="0"
+                                              max="100"
+                                              step="0.1"
+                                              value={item.customsDutyRate || 0}
+                                              onChange={(e) =>
+                                                updateItem(item.id, { customsDutyRate: parseFloat(e.target.value) || 0 })
+                                              }
+                                              className="mt-1"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </>
                                   )}
 
-                                  {itemTotals.customsDuty > 0 && (
-                                    <div className="flex justify-between text-sm text-warning">
-                                      <span>🛃 Douane ({item.customsDutyRate}%):</span>
-                                      <span className="font-medium">+ {formatCurrency(itemTotals.customsDuty)}</span>
-                                    </div>
+                                  {item.itemType === "subscription" && (
+                                    <>
+                                      <Separator />
+                                      <div className="space-y-3 p-3 bg-primary/5 rounded-lg">
+                                        <h5 className="font-medium text-sm text-primary flex items-center gap-2">
+                                          🔑 Licence / Abonnement
+                                        </h5>
+
+                                        <div className="flex items-center gap-4 mb-3">
+                                          <label className="flex items-center gap-2 text-sm font-medium cursor-pointer">
+                                            <input
+                                              type="checkbox"
+                                              checked={item.isPerpetual || false}
+                                              onChange={(e) => updateItem(item.id, { isPerpetual: e.target.checked })}
+                                              className="rounded cursor-pointer"
+                                            />
+                                            Licence perpétuelle
+                                          </label>
+                                        </div>
+
+                                        {!item.isPerpetual && (
+                                          <>
+                                            <div className="grid grid-cols-2 gap-3">
+                                              <div>
+                                                <Label className="text-xs">📅 Date début</Label>
+                                                <Input
+                                                  type="date"
+                                                  value={item.periodStart || ""}
+                                                  onChange={(e) => updateItem(item.id, { periodStart: e.target.value })}
+                                                  className="mt-1"
+                                                />
+                                              </div>
+                                              <div>
+                                                <Label className="text-xs">📅 Date fin</Label>
+                                                <Input
+                                                  type="date"
+                                                  value={item.periodEnd || ""}
+                                                  onChange={(e) => updateItem(item.id, { periodEnd: e.target.value })}
+                                                  className="mt-1"
+                                                />
+                                              </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3">
+                                              <div>
+                                                <Label className="text-xs">🔄 Cycle de facturation</Label>
+                                                <Select
+                                                  value={item.billingCycleUnit || "month"}
+                                                  onValueChange={(value) =>
+                                                    updateItem(item.id, { billingCycleUnit: value })
+                                                  }
+                                                >
+                                                  <SelectTrigger className="mt-1">
+                                                    <SelectValue placeholder="Cycle" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="day">Quotidien</SelectItem>
+                                                    <SelectItem value="month">Mensuel</SelectItem>
+                                                    <SelectItem value="year">Annuel</SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+                                              <div>
+                                                <Label className="text-xs">💰 Prix récurrent</Label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  step="0.01"
+                                                  value={item.recurringPrice || 0}
+                                                  onChange={(e) =>
+                                                    updateItem(item.id, { recurringPrice: parseFloat(e.target.value) || 0 })
+                                                  }
+                                                  className="mt-1"
+                                                />
+                                              </div>
+                                            </div>
+                                            {item.setupFee !== undefined && (
+                                              <div>
+                                                <Label className="text-xs">⚡ Frais d'installation</Label>
+                                                <Input
+                                                  type="number"
+                                                  min="0"
+                                                  step="100"
+                                                  value={item.setupFee}
+                                                  onChange={(e) =>
+                                                    updateItem(item.id, { setupFee: parseFloat(e.target.value) || 0 })
+                                                  }
+                                                  className="mt-1"
+                                                />
+                                              </div>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                    </>
                                   )}
 
-                                  <div className="flex justify-between text-sm font-semibold text-destructive">
-                                    <span>Total achat avec import:</span>
-                                    <span>{formatCurrency(itemTotals.totalCostWithImport)}</span>
+                                  <div>
+                                    <Label className="text-xs">📋 Spécifications</Label>
+                                    <Textarea
+                                      value={item.specifications || ""}
+                                      onChange={(e) => updateItem(item.id, { specifications: e.target.value })}
+                                      className="mt-1 min-h-[60px]"
+                                      placeholder="Spécifications techniques du produit..."
+                                    />
                                   </div>
-                                </>
-                              )}
-                            </div>
 
-                            <Separator className="bg-gradient-to-r from-destructive/30 via-success/30 to-destructive/30" />
+                                  <div>
+                                    <Label className="text-xs">📝 Notes</Label>
+                                    <Textarea
+                                      value={item.notes || ""}
+                                      onChange={(e) => updateItem(item.id, { notes: e.target.value })}
+                                      className="mt-1 min-h-[60px]"
+                                      placeholder="Notes supplémentaires..."
+                                    />
+                                  </div>
+                                </div>
 
-                            {/* Prix de vente */}
-                            <div className="space-y-2 p-3 bg-card/60 rounded-lg">
-                              <h5 className="text-xs font-semibold text-success uppercase tracking-wide">📤 Prix de vente</h5>
+                                <div className="space-y-4">
+                                  <h4 className="font-semibold text-sm text-primary flex items-center gap-2">
+                                    💰 Calculs automatiques
+                                  </h4>
 
-                              <div className="flex justify-between text-sm text-success">
-                                <span>📊 Ma marge ({itemTotals.marginRate}%):</span>
-                                <span className="font-semibold">+ {formatCurrency(itemTotals.marginAmount)}</span>
+                                  <Card className="bg-gradient-to-br from-muted/40 to-muted/20 border-2 border-primary/20 shadow-md">
+                                    <CardContent className="p-4 space-y-3">
+                                      <div className="space-y-2 p-3 bg-card/60 rounded-lg">
+                                        <h5 className="text-xs font-semibold text-destructive uppercase tracking-wide">
+                                          📥 Prix d'achat
+                                        </h5>
+
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-muted-foreground">Prix unitaire (devise):</span>
+                                          <span className="font-medium">
+                                            {item.costUnitForeign} {item.priceCurrency}
+                                          </span>
+                                        </div>
+
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-muted-foreground">Prix unitaire ({rfq.baseCurrency}):</span>
+                                          <span className="font-medium">{formatCurrency(itemTotals.costInLocalCurrency)}</span>
+                                        </div>
+
+                                        <Separator />
+
+                                        <div className="flex justify-between text-sm">
+                                          <span className="text-muted-foreground">Total achat brut:</span>
+                                          <span className="font-medium">{formatCurrency(itemTotals.totalCost)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-sm text-warning">
+                                          <span>💸 Remise fournisseur ({item.discountRate || 0}%):</span>
+                                          <span className="font-medium">- {formatCurrency(itemTotals.supplierDiscount)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-sm font-semibold">
+                                          <span>Total achat net:</span>
+                                          <span>{formatCurrency(itemTotals.costAfterDiscount)}</span>
+                                        </div>
+
+                                        {item.itemType === "product" && (
+                                          <>
+                                            <Separator className="bg-accent/30" />
+
+                                            {itemTotals.transportCost > 0 && (
+                                              <div className="flex justify-between text-sm text-accent">
+                                                <span>🚚 Transport:</span>
+                                                <span className="font-medium">
+                                                  + {formatCurrency(itemTotals.transportCost)}
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            {itemTotals.customsDuty > 0 && (
+                                              <div className="flex justify-between text-sm text-warning">
+                                                <span>🛃 Douane ({item.customsDutyRate}%):</span>
+                                                <span className="font-medium">
+                                                  + {formatCurrency(itemTotals.customsDuty)}
+                                                </span>
+                                              </div>
+                                            )}
+
+                                            <div className="flex justify-between text-sm font-semibold text-destructive">
+                                              <span>Total achat avec import:</span>
+                                              <span>{formatCurrency(itemTotals.totalCostWithImport)}</span>
+                                            </div>
+                                          </>
+                                        )}
+                                      </div>
+
+                                      <Separator className="bg-gradient-to-r from-destructive/30 via-success/30 to-destructive/30" />
+
+                                      <div className="space-y-2 p-3 bg-card/60 rounded-lg">
+                                        <h5 className="text-xs font-semibold text-success uppercase tracking-wide">
+                                          📤 Prix de vente
+                                        </h5>
+
+                                        <div className="flex justify-between text-sm text-success">
+                                          <span>📊 Ma marge ({itemTotals.marginRate}%):</span>
+                                          <span className="font-semibold">+ {formatCurrency(itemTotals.marginAmount)}</span>
+                                        </div>
+
+                                        <Separator className="bg-success/20" />
+
+                                        <div className="flex justify-between text-base font-bold text-accent">
+                                          <span>Prix de vente HT:</span>
+                                          <span>{formatCurrency(itemTotals.sellingPrice)}</span>
+                                        </div>
+
+                                        <div className="flex justify-between text-sm text-primary">
+                                          <span>📊 Taxe ({globalTaxRate}%):</span>
+                                          <span className="font-medium">+ {formatCurrency(itemTotals.taxAmount)}</span>
+                                        </div>
+
+                                        <Separator className="bg-primary/30" />
+
+                                        <div className="flex justify-between text-lg font-bold text-primary">
+                                          <span>💵 Prix de vente TTC:</span>
+                                          <span>{formatCurrency(itemTotals.sellingPriceInclTax)}</span>
+                                        </div>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+
+                                  <div className="flex gap-2">
+                                    <Button variant="destructive" size="sm" className="flex-1 gap-2 shadow-sm">
+                                      <Trash2 className="h-3 w-3" />
+                                      Supprimer l'article
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
-
-                              <Separator className="bg-success/20" />
-
-                              <div className="flex justify-between text-base font-bold text-accent">
-                                <span>Prix de vente HT:</span>
-                                <span>{formatCurrency(itemTotals.sellingPrice)}</span>
-                              </div>
-
-                              <div className="flex justify-between text-sm text-primary">
-                                <span>📊 Taxe ({globalTaxRate}%):</span>
-                                <span className="font-medium">+ {formatCurrency(itemTotals.taxAmount)}</span>
-                              </div>
-
-                              <Separator className="bg-primary/30" />
-
-                              <div className="flex justify-between text-lg font-bold text-primary">
-                                <span>💵 Prix de vente TTC:</span>
-                                <span>{formatCurrency(itemTotals.sellingPriceInclTax)}</span>
-                              </div>
-                            </div>
-                          </CardContent>
+                            </CardContent>
+                          )}
                         </Card>
+                      );
+                    })}
 
-                        <div className="flex gap-2">
-                          <Button variant="destructive" size="sm" className="flex-1 gap-2 shadow-sm">
-                            <Trash2 className="h-3 w-3" />
-                            Supprimer l'article
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            );
-          })}
-
-
-          {/* Notes */}
-          <Card className="border-2 border-muted shadow-sm">
-            <CardHeader className="bg-muted/20">
-              <CardTitle className="text-sm flex items-center gap-2">
-                📝 Notes internes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <Textarea 
-                defaultValue={rfq.internalNotes || ''}
-                className="min-h-[100px]"
-                placeholder="Notes internes non visibles par le client..."
-              />
-            </CardContent>
-          </Card>
+                    <Card className="border-2 border-muted shadow-sm">
+                      <CardHeader className="bg-muted/20">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          📝 Notes internes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-4">
+                        <Textarea
+                          defaultValue={rfq.internalNotes || ""}
+                          className="min-h-[100px]"
+                          placeholder="Notes internes non visibles par le client..."
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </AppLayout>
@@ -747,3 +781,17 @@ const RFQDetails = () => {
 };
 
 export default RFQDetails;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
