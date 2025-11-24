@@ -80,7 +80,7 @@ const Tasks = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
+      <div className="p-8 space-y-6 bg-muted/40">
         <div className="flex items-center gap-4 mb-4">
           <Button 
             variant="outline" 
@@ -93,15 +93,25 @@ const Tasks = () => {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Toutes les tâches</h1>
-            <p className="text-muted-foreground mt-1">Vue d'ensemble de toutes les tâches de tous les projets</p>
+        {/* Header bleu */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight flex items-center gap-3">
+                <Clock className="h-7 w-7" />
+                Toutes les tâches
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Vue d'ensemble de toutes les tâches de tous les projets.
+              </p>
+            </div>
+            <Button
+              className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <Plus className="h-4 w-4" />
+              Nouvelle tâche
+            </Button>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nouvelle tâche
-          </Button>
         </div>
 
         <Card>
@@ -157,23 +167,38 @@ const Tasks = () => {
               </TableHeader>
               <TableBody>
                 {tasks.map((task) => (
-                  <TableRow key={task.id} className="hover:bg-muted/50">
-                    <TableCell className="font-medium font-mono text-xs">{task.code}</TableCell>
-                    <TableCell className="font-medium">{task.title}</TableCell>
+                  <TableRow
+                    key={task.id}
+                    className="hover:bg-muted/60 hover:border-l-4 hover:border-primary/70 transition-colors cursor-pointer"
+                  >
+                    <TableCell className="font-medium font-mono text-xs text-muted-foreground">
+                      {task.code}
+                    </TableCell>
+                    <TableCell className="font-medium text-foreground">
+                      {task.title}
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium text-sm">{task.project.title}</p>
                         <p className="text-xs text-muted-foreground font-mono">{task.project.code}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{task.assignee}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {task.assignee}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={getPriorityVariant(task.priority)}>
+                      <Badge
+                        variant={getPriorityVariant(task.priority)}
+                        className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                      >
                         {task.priority}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(task.status)}>
+                      <Badge
+                        variant={getStatusVariant(task.status)}
+                        className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                      >
                         {task.status}
                       </Badge>
                     </TableCell>

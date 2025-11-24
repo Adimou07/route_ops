@@ -211,29 +211,37 @@ const Projects = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
+      <div className="p-8 space-y-6 bg-muted/40">
         {/* Page Header */}
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-              <FolderOpen className="h-8 w-8" />
-              Gestion des Projets
-            </h1>
-            <p className="text-muted-foreground mt-1">Gérez vos projets et suivez leur avancement</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
-            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Nouveau projet
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <FolderOpen className="h-8 w-8" />
+                Gestion des Projets
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez vos projets et suivez leur avancement.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="gap-2 bg-primary/20 border-primary/50 text-primary-foreground hover:bg-primary/30 hover:border-primary/70 hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <Filter className="h-4 w-4" />
+                Exporter
+              </Button>
+              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nouveau projet
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Créer un Nouveau Projet</DialogTitle>
                   <DialogDescription>Remplissez les informations du projet</DialogDescription>
@@ -304,22 +312,32 @@ const Projects = () => {
                     });
                   }}>Créer le projet</Button>
                 </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {stats.map((stat, index) => (
-            <Card key={index} className="cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 border-l-4" style={{ borderLeftColor: `hsl(var(--${stat.color}))` }}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center`} style={{ backgroundColor: `hsl(var(--${stat.color}) / 0.1)` }}>
-                    <stat.icon className="h-6 w-6" style={{ color: `hsl(var(--${stat.color}))` }} />
+            <Card
+              key={index}
+              className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div
+                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `hsl(var(--${stat.color}) / 0.12)` }}
+                  >
+                    <stat.icon
+                      className="h-5 w-5"
+                      style={{ color: `hsl(var(--${stat.color}))` }}
+                    />
                   </div>
                 </div>
-                <div className="text-3xl font-bold text-foreground mb-1">{stat.value}</div>
+                <div className="text-2xl font-semibold text-foreground mb-1">{stat.value}</div>
                 <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
               </CardContent>
             </Card>
@@ -415,27 +433,45 @@ const Projects = () => {
                       </TableRow>
                     ) : (
                       filteredProjects.map((project) => (
-                        <TableRow key={project.id} className="hover:bg-muted/50">
-                          <TableCell className="font-medium font-mono text-xs">{project.code}</TableCell>
-                          <TableCell className="font-medium">{project.title}</TableCell>
-                          <TableCell>{project.customer?.name || "N/A"}</TableCell>
+                        <TableRow
+                          key={project.id}
+                          className="hover:bg-muted/60 hover:border-l-4 hover:border-primary/70 transition-colors cursor-pointer"
+                        >
+                          <TableCell className="font-medium font-mono text-xs text-muted-foreground">
+                            {project.code}
+                          </TableCell>
+                          <TableCell className="font-medium text-foreground">
+                            {project.title}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {project.customer?.name || "N/A"}
+                          </TableCell>
                           <TableCell>
-                            <Badge variant={getStatusColor(project.status)}>
+                            <Badge
+                              variant={getStatusColor(project.status)}
+                              className="px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                            >
                               {project.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getPriorityColor(project.priority)}`}>
+                            <span
+                              className={`px-2 py-1 rounded-md text-[11px] font-semibold ${getPriorityColor(project.priority)}`}
+                            >
                               {project.priority}
                             </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Progress value={project.progress || 0} className="w-24 h-2" />
-                              <span className="text-xs text-muted-foreground font-medium">{project.progress || 0}%</span>
+                              <span className="text-xs text-muted-foreground font-medium">
+                                {project.progress || 0}%
+                              </span>
                             </div>
                           </TableCell>
-                          <TableCell className="font-semibold">{project.budget?.toLocaleString()} €</TableCell>
+                          <TableCell className="font-semibold">
+                            {project.budget?.toLocaleString()} €
+                          </TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-1 justify-end">
                               <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
@@ -444,9 +480,9 @@ const Projects = () => {
                               <Button variant="ghost" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
+                              <Button
+                                variant="ghost"
+                                size="sm"
                                 className="text-destructive hover:text-destructive"
                                 onClick={() => handleDeleteProject(project.id)}
                               >
