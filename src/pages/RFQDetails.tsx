@@ -17,7 +17,12 @@ import {
   Wrench,
   Key,
   Plus,
-  Trash2
+  Trash2,
+  FileQuestion,
+  Calendar,
+  TrendingUp,
+  Percent,
+  DollarSign
 } from "lucide-react";
 import {
   Select,
@@ -28,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { mockRFQDetails } from "@/data/mockData";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface RFQItem {
   id: number;
@@ -68,6 +74,7 @@ const RFQDetails = () => {
     customsDutyRate: item.itemType === 'product' ? (item.customsDutyRate || 0) : undefined,
     isPerpetual: item.itemType === 'subscription' ? (item.isPerpetual || false) : undefined
   })));
+  const [isTotalsOpen, setIsTotalsOpen] = useState(true);
 
   const updateItem = (itemId: number, updates: Partial<RFQItem>) => {
     setItems(prevItems =>
@@ -106,6 +113,15 @@ const RFQDetails = () => {
       currency: currency,
       minimumFractionDigits: 0
     }).format(amount);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   const calculateItemTotals = (item: RFQItem) => {
@@ -193,119 +209,159 @@ const RFQDetails = () => {
 
   return (
     <AppLayout>
-      <div className="min-h-screen flex flex-col">
-        {/* Header - Fixed */}
-        <div className="flex-shrink-0 p-6 border-b bg-gradient-to-r from-card via-primary/5 to-card shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigate("/rfq")}
-                className="shadow-sm"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold text-foreground">{rfq.code}</h1>
-                  <Badge variant={getStatusVariant(rfq.status)} className="shadow-sm">
-                    {rfq.status}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground mt-1">
-                  Client: {rfq.customer.name} • Projet: {rfq.project?.title || "N/A"}
-                </p>
-              </div>
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Back Button */}
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => navigate('/rfq')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour aux RFQ
+          </Button>
+        </div>
+
+        {/* Page Header (Styled as a Card) */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <FileQuestion className="h-8 w-8" />
+                Détails de la Demande de Cotation: {rfq.code}
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Client: {rfq.customer.name} • Projet: {rfq.project?.title || "N/A"}
+              </p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="gap-2 shadow-sm">
+              <Button
+                variant="outline"
+                className="gap-2 bg-primary/20 border-primary/50 text-primary-foreground hover:bg-primary/30 hover:border-primary/70 hover:-translate-y-0.5 transition-all duration-200"
+              >
                 <FileText className="h-4 w-4" />
                 Exporter PDF
               </Button>
-              <Button className="gap-2 shadow-sm">
+              <Button
+                className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200"
+              >
                 <Save className="h-4 w-4" />
                 Enregistrer
               </Button>
             </div>
           </div>
-
-          {/* Informations générales */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Date RFQ</Label>
-              <Input type="date" defaultValue={rfq.rfqDate} className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Date limite</Label>
-              <Input type="date" defaultValue={rfq.responseDeadline} className="mt-1" />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Devise de base</Label>
-              <Select defaultValue={rfq.baseCurrency}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="XOF">XOF</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
-                  <SelectItem value="EUR">EUR</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">💱 Taux de change global</Label>
-              <Input 
-                type="number" 
-                step="0.01"
-                value={globalFxRate} 
-                onChange={(e) => setGlobalFxRate(parseFloat(e.target.value) || 0)}
-                className="mt-1 font-semibold border-primary/50"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">📊 Taux de taxe global (%)</Label>
-              <Input 
-                type="number" 
-                step="0.01"
-                value={globalTaxRate} 
-                onChange={(e) => setGlobalTaxRate(parseFloat(e.target.value) || 0)}
-                className="mt-1 font-semibold border-primary/50"
-              />
-            </div>
-          </div>
         </div>
 
-        {/* Totaux - Sticky */}
-        <div className="flex-shrink-0 bg-gradient-to-br from-primary/15 via-accent/10 to-success/10 border-b-2 border-primary/20 shadow-lg p-6">
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">💰 Total Achat</p>
-              <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalCost)}</p>
-            </div>
-            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">📈 Marge</p>
-              <p className="text-lg font-bold text-success">{formatCurrency(totals.totalMargin)}</p>
-              <p className="text-xs text-success font-medium">({totals.marginRate.toFixed(1)}%)</p>
-            </div>
-            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">🚚 Transport</p>
-              <p className="text-lg font-bold text-accent">{formatCurrency(totals.totalTransport)}</p>
-            </div>
-            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">🛃 Douane</p>
-              <p className="text-lg font-bold text-warning">{formatCurrency(totals.totalCustoms)}</p>
-            </div>
-            <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
-              <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({globalTaxRate}%)</p>
-              <p className="text-lg font-bold text-destructive">{formatCurrency(totals.totalTax)}</p>
-            </div>
-            <div className="text-center p-3 bg-gradient-to-br from-primary/20 to-accent/20 backdrop-blur-sm rounded-lg shadow-md border-2 border-primary/30">
-              <p className="text-xs font-bold text-primary mb-1">💵 TOTAL TTC</p>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(totals.grandTotal)}</p>
-            </div>
-          </div>
+        {/* Informations générales - Nouvelle section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-l-4 border-l-primary cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date RFQ</p>
+                  <p className="text-lg font-bold">{rfq.rfqDate ? formatDate(rfq.rfqDate) : 'N/A'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-warning cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-warning" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Date limite</p>
+                  <p className="text-lg font-bold">{rfq.responseDeadline ? formatDate(rfq.responseDeadline) : 'N/A'}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-success cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-success" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Taux de change global</p>
+                  <p className="text-lg font-bold">
+                    {globalFxRate.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} XOF
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-accent cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <Percent className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Taux de taxe global (%)</p>
+                  <p className="text-lg font-bold">
+                    {globalTaxRate.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} %
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Totaux - Section Pliable */}
+        <Collapsible
+          open={isTotalsOpen}
+          onOpenChange={setIsTotalsOpen}
+          className="w-full"
+        >
+          <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-2 bg-gradient-to-br from-background via-card to-background rounded-lg shadow-sm border border-border/70 cursor-pointer mb-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card/80">
+            <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-success" />
+              Aperçu des Totaux
+            </h4>
+            {isTotalsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <span className="sr-only">Toggle</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">💰 Total Achat</p>
+                <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalCost)}</p>
+              </div>
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">📈 Marge</p>
+                <p className="text-lg font-bold text-success">{formatCurrency(totals.totalMargin)}</p>
+                <p className="text-xs text-success font-medium">({totals.marginRate.toFixed(1)}%)</p>
+              </div>
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">🚚 Transport</p>
+                <p className="text-lg font-bold text-accent">{formatCurrency(totals.totalTransport)}</p>
+              </div>
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">🛃 Douane</p>
+                <p className="text-lg font-bold text-warning">{formatCurrency(totals.totalCustoms)}</p>
+              </div>
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({globalTaxRate}%)</p>
+                <p className="text-lg font-bold text-destructive">{formatCurrency(totals.totalTax)}</p>
+              </div>
+              <div className="text-center p-3 bg-card/70 backdrop-blur-sm rounded-lg shadow-sm border border-primary/40">
+                <p className="text-xs font-bold text-primary mb-1">💵 TOTAL TTC</p>
+                <p className="text-xl font-bold text-primary leading-snug break-words">
+                  {formatCurrency(totals.grandTotal)}
+                </p>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Articles - Scrollable */}
         <div className="flex-1 bg-gradient-to-b from-background to-muted/20">

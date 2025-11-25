@@ -44,15 +44,15 @@ const Dashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 text-xs sm:text-sm min-w-[220px]">
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3 hover:bg-primary/25 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer">
+                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3">
                     <p className="font-medium opacity-90">Activité du mois</p>
                     <p className="text-[11px] sm:text-xs opacity-80">+15% vs mois dernier</p>
                   </div>
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3 hover:bg-primary/25 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer">
+                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3">
                     <p className="font-medium opacity-90">Projets actifs</p>
                     <p className="text-[11px] sm:text-xs opacity-80">Pilotage en cours</p>
                   </div>
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3 col-span-2 hover:bg-primary/25 hover:border-primary/60 hover:shadow-md transition-all cursor-pointer">
+                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3 col-span-2">
                     <p className="font-medium opacity-90">Vue consolidée</p>
                     <p className="text-[11px] sm:text-xs opacity-80">Commandes clients, fournisseurs et RFQ au même endroit.</p>
                   </div>
