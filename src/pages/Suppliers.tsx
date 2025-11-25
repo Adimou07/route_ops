@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Package } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -23,16 +23,24 @@ const Suppliers = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Fournisseurs</h1>
-            <p className="text-muted-foreground mt-1">Gérez votre réseau de fournisseurs</p>
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Page Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <Package className="h-8 w-8" />
+                Fournisseurs
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez votre réseau de fournisseurs et partenaires.
+              </p>
+            </div>
+            <Button className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200">
+              <Plus className="h-4 w-4" />
+              Nouveau fournisseur
+            </Button>
           </div>
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nouveau fournisseur
-          </Button>
         </div>
 
         <Card>

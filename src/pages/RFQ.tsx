@@ -93,20 +93,27 @@ const RFQ = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Demandes de Prix (RFQ)</h1>
-            <p className="text-muted-foreground mt-1">Gérez les demandes de devis clients</p>
-          </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nouvelle RFQ
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Page Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <FileText className="h-8 w-8" />
+                Demandes de Prix (RFQ)
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez les demandes de devis clients et suivez leur statut.
+              </p>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle RFQ
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Créer une Demande de Prix</DialogTitle>
                 <DialogDescription>
@@ -194,30 +201,31 @@ const RFQ = () => {
                 <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
                 <Button onClick={() => setOpen(false)}>Créer la RFQ</Button>
               </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Total RFQs</CardDescription>
               <CardTitle className="text-3xl">24</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>En attente</CardDescription>
               <CardTitle className="text-3xl text-warning">8</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Devisées</CardDescription>
               <CardTitle className="text-3xl text-primary">10</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Acceptées</CardDescription>
               <CardTitle className="text-3xl text-success">6</CardTitle>
@@ -257,17 +265,17 @@ const RFQ = () => {
           </CardHeader>
           <CardContent>
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead>Référence</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Projet</TableHead>
-                  <TableHead>Articles</TableHead>
-                  <TableHead>Date RFQ</TableHead>
-                  <TableHead>Date limite</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Créé par</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Référence</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Client</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Projet</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Articles</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date RFQ</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Date limite</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Statut</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Créé par</TableHead>
+                  <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

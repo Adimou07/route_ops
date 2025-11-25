@@ -73,11 +73,11 @@ export const ProjectCard = ({ project, getPriorityColor, onViewProject }: Projec
             />
           </div>
         </div>
-        <div className="flex gap-1 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex flex-wrap gap-1 pt-2 opacity-0 group-hover:opacity-100 transition-opacity w-full">
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 w-full"
+            className="h-8 flex-1 min-w-[90px] justify-center text-xs px-2"
             onClick={(e) => {
               e.stopPropagation();
               onViewProject(project.id);
@@ -90,7 +90,7 @@ export const ProjectCard = ({ project, getPriorityColor, onViewProject }: Projec
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-8 w-full"
+            className="h-8 flex-1 min-w-[90px] justify-center text-xs px-2"
             onClick={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter, Eye, Edit, Trash2, Download, Send } from "lucide-react";
+import { Plus, Search, Filter, Eye, Edit, Trash2, Download, Send, FileText } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -139,132 +139,140 @@ const Invoices = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Factures</h1>
-            <p className="text-muted-foreground mt-1">Gérez les factures clients et fournisseurs</p>
-          </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nouvelle Facture
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Créer une Facture</DialogTitle>
-                <DialogDescription>
-                  Remplissez les informations de la facture
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Type de facture *</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner le type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CUSTOMER">Facture client</SelectItem>
-                        <SelectItem value="SUPPLIER">Facture fournisseur</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="entity">Client/Fournisseur *</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">Entreprise Alpha</SelectItem>
-                        <SelectItem value="2">Société Beta</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="issuedDate">Date émission</Label>
-                    <Input type="date" id="issuedDate" defaultValue={new Date().toISOString().split('T')[0]} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate">Date échéance</Label>
-                    <Input type="date" id="dueDate" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Statut</Label>
-                    <Select defaultValue="DRAFT">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="DRAFT">Brouillon</SelectItem>
-                        <SelectItem value="SENT">Envoyée</SelectItem>
-                        <SelectItem value="PAID">Payée</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Articles</Label>
-                  <div className="border rounded-md p-4 space-y-3">
-                    <div className="grid grid-cols-12 gap-2">
-                      <div className="col-span-4">
-                        <Input placeholder="Désignation" />
-                      </div>
-                      <div className="col-span-2">
-                        <Input type="number" placeholder="Qté" defaultValue="1" />
-                      </div>
-                      <div className="col-span-2">
-                        <Input type="number" placeholder="Prix U." />
-                      </div>
-                      <div className="col-span-2">
-                        <Input type="number" placeholder="TVA %" defaultValue="20" />
-                      </div>
-                      <div className="col-span-1">
-                        <Input disabled placeholder="Total" />
-                      </div>
-                      <div className="col-span-1 flex items-center justify-center">
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Page Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <FileText className="h-8 w-8" />
+                Factures
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez les factures clients et fournisseurs et suivez vos encaissements.
+              </p>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200">
+                  <Plus className="h-4 w-4" />
+                  Nouvelle Facture
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Créer une Facture</DialogTitle>
+                  <DialogDescription>
+                    Remplissez les informations de la facture
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="type">Type de facture *</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CUSTOMER">Facture client</SelectItem>
+                          <SelectItem value="SUPPLIER">Facture fournisseur</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter un article
-                    </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="entity">Client/Fournisseur *</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Entreprise Alpha</SelectItem>
+                          <SelectItem value="2">Société Beta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="issuedDate">Date émission</Label>
+                      <Input type="date" id="issuedDate" defaultValue={new Date().toISOString().split('T')[0]} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dueDate">Date échéance</Label>
+                      <Input type="date" id="dueDate" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Statut</Label>
+                      <Select defaultValue="DRAFT">
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="DRAFT">Brouillon</SelectItem>
+                          <SelectItem value="SENT">Envoyée</SelectItem>
+                          <SelectItem value="PAID">Payée</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Articles</Label>
+                    <div className="border rounded-md p-4 space-y-3">
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-4">
+                          <Input placeholder="Désignation" />
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" placeholder="Qté" defaultValue="1" />
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" placeholder="Prix U." />
+                        </div>
+                        <div className="col-span-2">
+                          <Input type="number" placeholder="TVA %" defaultValue="20" />
+                        </div>
+                        <div className="col-span-1">
+                          <Input disabled placeholder="Total" />
+                        </div>
+                        <div className="col-span-1 flex items-center justify-center">
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Ajouter un article
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-md">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Total HT</Label>
+                      <div className="text-xl font-bold">0,00 €</div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">TVA</Label>
+                      <div className="text-xl font-bold">0,00 €</div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Total TTC</Label>
+                      <div className="text-xl font-bold text-primary">0,00 €</div>
+                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-md">
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Total HT</Label>
-                    <div className="text-xl font-bold">0,00 €</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">TVA</Label>
-                    <div className="text-xl font-bold">0,00 €</div>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Total TTC</Label>
-                    <div className="text-xl font-bold text-primary">0,00 €</div>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-                <Button onClick={() => setOpen(false)}>Créer</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+                  <Button onClick={() => setOpen(false)}>Créer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Total Factures</CardDescription>
               <CardTitle className="text-3xl">
@@ -272,7 +280,7 @@ const Invoices = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Payées</CardDescription>
               <CardTitle className="text-3xl text-success">
@@ -280,7 +288,7 @@ const Invoices = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>En retard</CardDescription>
               <CardTitle className="text-3xl text-destructive">
@@ -288,7 +296,7 @@ const Invoices = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Montant total</CardDescription>
               <CardTitle className="text-2xl">

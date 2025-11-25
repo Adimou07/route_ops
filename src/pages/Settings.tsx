@@ -5,14 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Settings as SettingsIcon } from "lucide-react";
 
 const Settings = () => {
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Paramètres</h1>
-          <p className="text-muted-foreground mt-1">Gérez les paramètres de votre plateforme</p>
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Page Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl mb-4">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <SettingsIcon className="h-8 w-8" />
+                Paramètres
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez les paramètres de votre plateforme.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-6">

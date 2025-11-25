@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter, Eye, Edit, Trash2, Globe, Mail, Phone } from "lucide-react";
+import { Plus, Search, Filter, Eye, Edit, Trash2, Globe, Mail, Phone, Factory } from "lucide-react";
+
 import {
   Table,
   TableBody,
@@ -65,82 +66,90 @@ const Manufacturers = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Fabricants</h1>
-            <p className="text-muted-foreground mt-1">Gérez les constructeurs et marques (OEM)</p>
+      <div className="p-8 space-y-6 bg-muted/40">
+        {/* Page Header */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                <Factory className="h-8 w-8" />
+                Fabricants
+              </h1>
+              <p className="text-sm sm:text-base text-primary-foreground/80 mt-1">
+                Gérez les constructeurs et marques (OEM) référencés.
+              </p>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200">
+                  <Plus className="h-4 w-4" />
+                  Nouveau Fabricant
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Ajouter un Fabricant</DialogTitle>
+                  <DialogDescription>
+                    Remplissez les informations du fabricant/constructeur
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nom *</Label>
+                      <Input id="name" placeholder="Dell Technologies" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="brandName">Nom de marque</Label>
+                      <Input id="brandName" placeholder="Dell" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" placeholder="contact@fabricant.com" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Téléphone</Label>
+                      <Input id="phone" placeholder="+33 1 23 45 67 89" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="website">Site web</Label>
+                    <Input id="website" placeholder="www.fabricant.com" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Pays</Label>
+                      <Input id="country" placeholder="France" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Ville</Label>
+                      <Input id="city" placeholder="Paris" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Adresse</Label>
+                    <Input id="address" placeholder="Adresse complète" />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+                  <Button onClick={() => setOpen(false)}>Créer</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nouveau Fabricant
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Ajouter un Fabricant</DialogTitle>
-                <DialogDescription>
-                  Remplissez les informations du fabricant/constructeur
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Nom *</Label>
-                    <Input id="name" placeholder="Dell Technologies" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="brandName">Nom de marque</Label>
-                    <Input id="brandName" placeholder="Dell" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="contact@fabricant.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Téléphone</Label>
-                    <Input id="phone" placeholder="+33 1 23 45 67 89" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="website">Site web</Label>
-                  <Input id="website" placeholder="www.fabricant.com" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Pays</Label>
-                    <Input id="country" placeholder="France" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">Ville</Label>
-                    <Input id="city" placeholder="Paris" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Adresse</Label>
-                  <Input id="address" placeholder="Adresse complète" />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-                <Button onClick={() => setOpen(false)}>Créer</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Total Fabricants</CardDescription>
               <CardTitle className="text-3xl">{manufacturers.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Actifs</CardDescription>
               <CardTitle className="text-3xl text-success">
@@ -148,7 +157,7 @@ const Manufacturers = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Inactifs</CardDescription>
               <CardTitle className="text-3xl text-muted-foreground">
@@ -156,7 +165,7 @@ const Manufacturers = () => {
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
             <CardHeader className="pb-3">
               <CardDescription>Ajoutés ce mois</CardDescription>
               <CardTitle className="text-3xl">2</CardTitle>

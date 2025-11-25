@@ -72,7 +72,7 @@ export function AppSidebar() {
             <NavLink 
               to={item.url} 
               end
-              className="hover:bg-sidebar-accent"
+              className={isCollapsed ? "hover:bg-sidebar-accent justify-center" : "hover:bg-sidebar-accent"}
               activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
             >
               <item.icon className="h-4 w-4" />
@@ -85,18 +85,21 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className={isCollapsed ? "w-16" : "w-64"} collapsible="icon">
+    <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <Package className="h-5 w-5 text-sidebar-primary-foreground" />
-          </div>
-          {!isCollapsed && (
-            <div>
-              <h2 className="text-sm font-semibold text-sidebar-foreground">Supply Chain</h2>
-              <p className="text-xs text-sidebar-foreground/60">Management</p>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
+              <Package className="h-5 w-5 text-sidebar-primary-foreground" />
             </div>
-          )}
+            {!isCollapsed && (
+              <div>
+                <h2 className="text-sm font-semibold text-sidebar-foreground">Supply Chain</h2>
+                <p className="text-xs text-sidebar-foreground/60">Management</p>
+              </div>
+            )}
+          </div>
+          {!isCollapsed && <SidebarTrigger className="ml-2" />}
         </div>
       </SidebarHeader>
 
@@ -130,16 +133,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-4">
+      <SidebarFooter className="border-t border-sidebar-border p-4 flex items-center justify-between gap-2">
         <Button 
           variant="ghost" 
-          className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+          className={
+            isCollapsed
+              ? "flex-1 justify-center text-sidebar-foreground hover:bg-sidebar-accent"
+              : "flex-1 justify-start text-sidebar-foreground hover:bg-sidebar-accent"
+          }
           size={isCollapsed ? "icon" : "default"}
         >
           <LogOut className="h-4 w-4" />
           {!isCollapsed && <span className="ml-2">Déconnexion</span>}
         </Button>
-        <SidebarTrigger className="mt-2" />
+        {isCollapsed && (
+          <SidebarTrigger className="ml-2" />
+        )}
       </SidebarFooter>
     </Sidebar>
   );

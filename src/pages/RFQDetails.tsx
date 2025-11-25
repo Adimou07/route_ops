@@ -74,7 +74,7 @@ const RFQDetails = () => {
     customsDutyRate: item.itemType === 'product' ? (item.customsDutyRate || 0) : undefined,
     isPerpetual: item.itemType === 'subscription' ? (item.isPerpetual || false) : undefined
   })));
-  const [isTotalsOpen, setIsTotalsOpen] = useState(true);
+  const [isTotalsOpen, setIsTotalsOpen] = useState(false);
 
   const updateItem = (itemId: number, updates: Partial<RFQItem>) => {
     setItems(prevItems =>
