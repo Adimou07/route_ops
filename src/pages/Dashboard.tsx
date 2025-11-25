@@ -35,8 +35,9 @@ const Dashboard = () => {
                   <p className="text-xs font-semibold uppercase tracking-wide/relaxed opacity-80">
                     Vue générale
                   </p>
-                  <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight">
-                    Tableau de bord 
+                  <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
+                    <FolderKanban className="h-8 w-8" />
+                    Tableau de bord
                   </h1>
                   <p className="text-sm sm:text-base text-primary-foreground/90">
                     Suivez en temps réel vos projets, commandes et indicateurs clés de performance.
@@ -44,50 +45,58 @@ const Dashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 text-xs sm:text-sm min-w-[220px]">
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3">
-                    <p className="font-medium opacity-90">Activité du mois</p>
-                    <p className="text-[11px] sm:text-xs opacity-80">+15% vs mois dernier</p>
+                  <div className="rounded-2xl bg-white/95 text-foreground border border-border/40 px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
+                    <p className="font-medium">Activité du mois</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">+15% vs mois dernier</p>
                   </div>
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3">
-                    <p className="font-medium opacity-90">Projets actifs</p>
-                    <p className="text-[11px] sm:text-xs opacity-80">Pilotage en cours</p>
+                  <div className="rounded-2xl bg-white/95 text-foreground border border-border/40 px-3 py-2.5 sm:px-4 sm:py-3 shadow-sm">
+                    <p className="font-medium">Projets actifs</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">Pilotage en cours</p>
                   </div>
-                  <div className="rounded-2xl bg-primary/20 border border-primary/40 px-3 py-2.5 sm:px-4 sm:py-3 col-span-2">
-                    <p className="font-medium opacity-90">Vue consolidée</p>
-                    <p className="text-[11px] sm:text-xs opacity-80">Commandes clients, fournisseurs et RFQ au même endroit.</p>
+                  <div className="rounded-2xl bg-white/95 text-foreground border border-border/40 px-3 py-2.5 sm:px-4 sm:py-3 col-span-2 shadow-sm">
+                    <p className="font-medium">Vue consolidée</p>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground">Commandes clients, fournisseurs et RFQ au même endroit.</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <StatsCard
-                title="Projets actifs"
-                value={24}
-                icon={FolderKanban}
-                trend={{ value: "+12%", isPositive: true }}
-                description="vs mois dernier"
-              />
-              <StatsCard
-                title="Commandes clients"
-                value={156}
-                icon={ShoppingCart}
-                trend={{ value: "+8%", isPositive: true }}
-                description="ce mois"
-              />
-              <StatsCard
-                title="Commandes fournisseurs"
-                value={89}
-                icon={Package}
-                trend={{ value: "-3%", isPositive: false }}
-                description="en cours"
-              />
-              <StatsCard
-                title="RFQ en attente"
-                value={12}
-                icon={FileText}
-                description="nécessitent une action"
-              />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 justify-items-stretch">
+              <div className="max-w-[210px] w-full justify-self-stretch">
+                <StatsCard
+                  title="Projets actifs"
+                  value={24}
+                  icon={FolderKanban}
+                  trend={{ value: "+12%", isPositive: true }}
+                  description="vs mois dernier"
+                />
+              </div>
+              <div className="max-w-[210px] w-full justify-self-stretch">
+                <StatsCard
+                  title="Commandes clients"
+                  value={156}
+                  icon={ShoppingCart}
+                  trend={{ value: "+8%", isPositive: true }}
+                  description="ce mois"
+                />
+              </div>
+              <div className="max-w-[210px] w-full justify-self-stretch">
+                <StatsCard
+                  title="Commandes fournisseurs"
+                  value={89}
+                  icon={Package}
+                  trend={{ value: "-3%", isPositive: false }}
+                  description="en cours"
+                />
+              </div>
+              <div className="max-w-[210px] w-full justify-self-stretch">
+                <StatsCard
+                  title="RFQ en attente"
+                  value={12}
+                  icon={FileText}
+                  description="nécessitent une action"
+                />
+              </div>
             </div>
           </div>
 

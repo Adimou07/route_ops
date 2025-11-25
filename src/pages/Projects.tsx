@@ -319,26 +319,30 @@ const Projects = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className="cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
+              className="cursor-pointer border-border/60 bg-card/95 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
             >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
+              <CardContent className="px-4 py-3">
+                <div className="flex items-start justify-between mb-2">
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center"
                     style={{ backgroundColor: `hsl(var(--${stat.color}) / 0.12)` }}
                   >
                     <stat.icon
-                      className="h-5 w-5"
+                      className="h-4 w-4"
                       style={{ color: `hsl(var(--${stat.color}))` }}
                     />
                   </div>
                 </div>
-                <div className="text-2xl font-semibold text-foreground mb-1">{stat.value}</div>
-                <div className="text-sm text-muted-foreground font-medium">{stat.label}</div>
+                <div className="text-xl font-semibold text-foreground leading-tight mb-0.5">
+                  {stat.value}
+                </div>
+                <div className="text-xs text-muted-foreground font-medium tracking-wide uppercase">
+                  {stat.label}
+                </div>
               </CardContent>
             </Card>
           ))}

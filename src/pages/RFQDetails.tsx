@@ -11,8 +11,6 @@ import {
   ArrowLeft, 
   Save, 
   FileText, 
-  ChevronDown,
-  ChevronUp,
   Package,
   Wrench,
   Key,
@@ -33,7 +31,6 @@ import {
 } from "@/components/ui/select";
 import { mockRFQDetails } from "@/data/mockData";
 import { Separator } from "@/components/ui/separator";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface RFQItem {
   id: number;
@@ -65,16 +62,21 @@ const RFQDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const rfq = mockRFQDetails;
+
+  // Editable global settings
+  const [rfqDate, setRfqDate] = useState(rfq.rfqDate || "");
+  const [responseDeadline, setResponseDeadline] = useState(rfq.responseDeadline || "");
+  const [baseCurrency, setBaseCurrency] = useState(rfq.baseCurrency || "XOF");
   const [globalFxRate, setGlobalFxRate] = useState(600);
-  const [globalTaxRate, setGlobalTaxRate] = useState(mockRFQDetails.globalTaxRate || 18);
-  const [items, setItems] = useState<RFQItem[]>(mockRFQDetails.items.map(item => ({
+  const [globalTaxRate, setGlobalTaxRate] = useState(rfq.globalTaxRate || 18);
+  const [items, setItems] = useState<RFQItem[]>(rfq.items.map(item => ({
     ...item,
     margin: 10,
     transportCost: item.itemType === 'product' ? (item.transportCost || 0) : undefined,
     customsDutyRate: item.itemType === 'product' ? (item.customsDutyRate || 0) : undefined,
     isPerpetual: item.itemType === 'subscription' ? (item.isPerpetual || false) : undefined
   })));
-  const [isTotalsOpen, setIsTotalsOpen] = useState(false);
 
   const updateItem = (itemId: number, updates: Partial<RFQItem>) => {
     setItems(prevItems =>
@@ -83,8 +85,6 @@ const RFQDetails = () => {
       )
     );
   };
-
-  const rfq = mockRFQDetails;
 
   const toggleItem = (itemId: number) => {
     setExpandedItems(prev => {
@@ -107,7 +107,7 @@ const RFQDetails = () => {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string = "XOF") => {
+  const formatCurrency = (amount: number, currency: string = baseCurrency) => {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: currency,
@@ -125,7 +125,7 @@ const RFQDetails = () => {
   };
 
   const calculateItemTotals = (item: RFQItem) => {
-    const costInLocalCurrency = item.costUnitForeign * (item.priceCurrency !== rfq.baseCurrency ? globalFxRate : 1);
+    const costInLocalCurrency = item.costUnitForeign * (item.priceCurrency !== baseCurrency ? globalFxRate : 1);
     const totalCost = costInLocalCurrency * item.quantity;
     
     const supplierDiscount = item.discountRate 
@@ -209,24 +209,11 @@ const RFQDetails = () => {
 
   return (
     <AppLayout>
-      <div className="p-8 space-y-6 bg-muted/40">
-        {/* Back Button */}
-        <div className="flex items-center gap-4 mb-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate('/rfq')}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour aux RFQ
-          </Button>
-        </div>
-
-        {/* Page Header (Styled as a Card) */}
+      <div className="px-6 pt-3 pb-6 space-y-4 bg-muted/40">
+        {/* Page Header */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-2xl">
-          <div className="px-6 py-6 sm:px-10 sm:py-8 flex items-center justify-between flex-wrap gap-4">
-            <div>
+          <div className="px-6 py-6 sm:px-10 sm:py-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="space-y-1">
               <h1 className="text-3xl font-bold text-primary-foreground flex items-center gap-3">
                 <FileQuestion className="h-8 w-8" />
                 Détails de la Demande de Cotation: {rfq.code}
@@ -235,7 +222,7 @@ const RFQDetails = () => {
                 Client: {rfq.customer.name} • Projet: {rfq.project?.title || "N/A"}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 md:self-auto self-end">
               <Button
                 variant="outline"
                 className="gap-2 bg-primary/20 border-primary/50 text-primary-foreground hover:bg-primary/30 hover:border-primary/70 hover:-translate-y-0.5 transition-all duration-200"
@@ -253,117 +240,134 @@ const RFQDetails = () => {
           </div>
         </div>
 
-        {/* Informations générales - Nouvelle section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-primary cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date RFQ</p>
-                  <p className="text-lg font-bold">{rfq.rfqDate ? formatDate(rfq.rfqDate) : 'N/A'}</p>
-                </div>
+        {/* Informations générales - Champs éditables */}
+        <Card className="mt-4 shadow-sm border border-border/60">
+          <CardContent className="p-4 flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Date RFQ */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Date RFQ
+                </Label>
+                <Input
+                  type="date"
+                  value={rfqDate}
+                  onChange={(e) => setRfqDate(e.target.value)}
+                  className="bg-background"
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border-l-4 border-l-warning cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-warning" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Date limite</p>
-                  <p className="text-lg font-bold">{rfq.responseDeadline ? formatDate(rfq.responseDeadline) : 'N/A'}</p>
-                </div>
+              {/* Date limite */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Date limite
+                </Label>
+                <Input
+                  type="date"
+                  value={responseDeadline}
+                  onChange={(e) => setResponseDeadline(e.target.value)}
+                  className="bg-background"
+                />
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border-l-4 border-l-success cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Taux de change global</p>
-                  <p className="text-lg font-bold">
-                    {globalFxRate.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} XOF
-                  </p>
-                </div>
+              {/* Devise de base */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Devise de base
+                </Label>
+                <Select value={baseCurrency} onValueChange={setBaseCurrency}>
+                  <SelectTrigger className="bg-background">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="XOF">XOF</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card className="border-l-4 border-l-accent cursor-pointer border-border/70 bg-card/95 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <Percent className="h-6 w-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Taux de taxe global (%)</p>
-                  <p className="text-lg font-bold">
-                    {globalTaxRate.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} %
-                  </p>
-                </div>
+              {/* Taux de change global */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Taux de change global
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={globalFxRate}
+                  onChange={(e) => setGlobalFxRate(parseFloat(e.target.value) || 0)}
+                  className="bg-background"
+                />
               </div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Totaux - Section Pliable */}
-        <Collapsible
-          open={isTotalsOpen}
-          onOpenChange={setIsTotalsOpen}
-          className="w-full"
-        >
-          <CollapsibleTrigger className="w-full flex items-center justify-between px-4 py-2 bg-gradient-to-br from-background via-card to-background rounded-lg shadow-sm border border-border/70 cursor-pointer mb-2 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/50 hover:bg-card/80">
-            <h4 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-success" />
-              Aperçu des Totaux
-            </h4>
-            {isTotalsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            <span className="sr-only">Toggle</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              {/* Taux de taxe global (%) */}
+              <div className="space-y-1">
+                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-2">
+                  <Percent className="h-4 w-4" />
+                  Taux de taxe global (%)
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={globalTaxRate}
+                  onChange={(e) => setGlobalTaxRate(parseFloat(e.target.value) || 0)}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+
+            {/* Totaux - compact, collés aux champs éditables */}
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4 pt-2">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-medium text-muted-foreground mb-1">💰 Total Achat</p>
-                <p className="text-lg font-bold text-foreground">{formatCurrency(totals.totalCost)}</p>
+                <p className="text-lg font-bold text-foreground break-words leading-tight">
+                  {formatCurrency(totals.totalCost)}
+                </p>
               </div>
-              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-medium text-muted-foreground mb-1">📈 Marge</p>
-                <p className="text-lg font-bold text-success">{formatCurrency(totals.totalMargin)}</p>
-                <p className="text-xs text-success font-medium">({totals.marginRate.toFixed(1)}%)</p>
+                <p className="text-lg font-bold text-success break-words leading-tight">
+                  {formatCurrency(totals.totalMargin)}
+                </p>
+                <p className="text-xs text-success font-medium mt-0.5">({totals.marginRate.toFixed(1)}%)</p>
               </div>
-              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-medium text-muted-foreground mb-1">🚚 Transport</p>
-                <p className="text-lg font-bold text-accent">{formatCurrency(totals.totalTransport)}</p>
+                <p className="text-lg font-bold text-accent break-words leading-tight">
+                  {formatCurrency(totals.totalTransport)}
+                </p>
               </div>
-              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-medium text-muted-foreground mb-1">🛃 Douane</p>
-                <p className="text-lg font-bold text-warning">{formatCurrency(totals.totalCustoms)}</p>
+                <p className="text-lg font-bold text-warning break-words leading-tight">
+                  {formatCurrency(totals.totalCustoms)}
+                </p>
               </div>
-              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50">
+              <div className="text-center p-3 bg-card/60 backdrop-blur-sm rounded-lg shadow-sm border border-border/50 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-medium text-muted-foreground mb-1">📊 Taxes ({globalTaxRate}%)</p>
-                <p className="text-lg font-bold text-destructive">{formatCurrency(totals.totalTax)}</p>
+                <p className="text-lg font-bold text-destructive break-words leading-tight">
+                  {formatCurrency(totals.totalTax)}
+                </p>
               </div>
-              <div className="text-center p-3 bg-card/70 backdrop-blur-sm rounded-lg shadow-sm border border-primary/40">
+              <div className="text-center p-3 bg-card/70 backdrop-blur-sm rounded-lg shadow-sm border border-primary/40 min-h-[84px] flex flex-col justify-center">
                 <p className="text-xs font-bold text-primary mb-1">💵 TOTAL TTC</p>
-                <p className="text-xl font-bold text-primary leading-snug break-words">
+                <p className="text-xl font-bold text-primary leading-tight break-words">
                   {formatCurrency(totals.grandTotal)}
                 </p>
               </div>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          </CardContent>
+        </Card>
 
-        {/* Articles - Scrollable */}
+        {/* Articles - Scrollable (version précédente avec sticky) */}
         <div className="flex-1 bg-gradient-to-b from-background to-muted/20">
           <div className="relative px-6 pb-6">
             <div className="sticky top-6">
@@ -431,12 +435,13 @@ const RFQDetails = () => {
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => toggleItem(item.id)}>
-                                  {isExpanded ? (
-                                    <ChevronUp className="h-4 w-4" />
-                                  ) : (
-                                    <ChevronDown className="h-4 w-4" />
-                                  )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleItem(item.id)}
+                                  className="text-xs font-medium"
+                                >
+                                  {isExpanded ? "Masquer" : "Détails"}
                                 </Button>
                               </div>
                             </div>
@@ -830,6 +835,18 @@ const RFQDetails = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Back Button en bas */}
+        <div className="mt-4 flex justify-start">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/rfq')}
+            className="gap-2 text-sm text-muted-foreground hover:text-primary hover:bg-muted/70 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Retour à la liste des RFQ</span>
+          </Button>
         </div>
       </div>
     </AppLayout>
