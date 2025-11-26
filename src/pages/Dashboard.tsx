@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +11,23 @@ import {
   Clock
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getCurrentUser, type User } from "@/api/auth";
 
 const Dashboard = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch {
+        // en cas d'erreur, on n'affiche simplement pas le bloc utilisateur
+      }
+    };
+
+    fetchUser();
+  }, []);
   const recentProjects = [
     { id: "PROJ-00123", name: "Installation Réseau Client A", status: "En cours", progress: 65 },
     { id: "PROJ-00124", name: "Migration Datacenter B", status: "En attente", progress: 30 },
@@ -42,6 +58,21 @@ const Dashboard = () => {
                   <p className="text-sm sm:text-base text-primary-foreground/90">
                     Suivez en temps réel vos projets, commandes et indicateurs clés de performance.
                   </p>
+                  {currentUser && (
+                    <div className="mt-3 inline-flex items-center gap-3 rounded-full bg-white/10 px-3 py-1.5 border border-primary/40 shadow-sm">
+                      <div className="h-8 w-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center text-xs font-semibold uppercase">
+                        {`${currentUser.firstname?.[0] || ""}${currentUser.lastname?.[0] || ""}`}
+                      </div>
+                      <div className="text-xs leading-tight text-primary-foreground/90">
+                        <div className="font-semibold">
+                          {currentUser.firstname} {currentUser.lastname}
+                        </div>
+                        <div className="text-[10px] opacity-80 truncate max-w-[180px]">
+                          {currentUser.email}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-4 text-xs sm:text-sm min-w-[220px]">

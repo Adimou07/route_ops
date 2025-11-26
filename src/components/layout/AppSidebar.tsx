@@ -15,7 +15,7 @@ import {
   Receipt
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -31,6 +31,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { logout } from "@/api/auth";
 
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -60,9 +61,20 @@ const adminItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   
   const isActive = (path: string) => location.pathname === path;
   const isCollapsed = state === "collapsed";
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // même en cas d'erreur API, on force la sortie côté front
+    } finally {
+      navigate("/auth", { replace: true });
+    }
+  };
 
   const renderMenuItems = (items: typeof mainItems) => (
     <SidebarMenu>
@@ -142,6 +154,7 @@ export function AppSidebar() {
               : "flex-1 justify-start text-sidebar-foreground hover:bg-sidebar-accent"
           }
           size={isCollapsed ? "icon" : "default"}
+          onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
           {!isCollapsed && <span className="ml-2">Déconnexion</span>}
