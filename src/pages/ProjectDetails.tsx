@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LoadingState } from "@/components/ui/loading-spinner";
 import { ErrorState } from "@/components/ui/error-state";
-import { getMockProjectById } from "@/data/mockData";
+import { fetchProjectById } from "@/api/projects";
 
 interface Task {
   id: number;
@@ -133,7 +133,7 @@ interface Project {
   code: string;
   title: string;
   description: string;
-  customerId: number;
+  customerId: number | null;
   status: string;
   startDate: string;
   endDate: string;
@@ -143,14 +143,14 @@ interface Project {
   createdBy: number | null;
   createdAt: string;
   updatedAt: string;
-  customer: Customer;
-  manager: any;
-  tasks: Task[];
-  documents: Document[];
-  progress: number;
-  rfqs: RFQ[];
-  salesOrders: SalesOrder[];
-  purchaseOrders: PurchaseOrder[];
+  customer?: Customer;
+  manager?: any;
+  tasks?: Task[];
+  documents?: Document[];
+  progress?: number;
+  rfqs?: RFQ[];
+  salesOrders?: SalesOrder[];
+  purchaseOrders?: PurchaseOrder[];
 }
 
 const ProjectDetails = () => {
@@ -163,18 +163,27 @@ const ProjectDetails = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewAllTasks, setViewAllTasks] = useState(false);
 
-  // Fetch project data from mock data
+  // Fetch project data from API
   useEffect(() => {
     const fetchProject = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const data = getMockProjectById(id!);
-        setProject(data);
+        if (!id) return;
+
+        const raw: any = await fetchProjectById(id);
+        const normalized: Project = {
+          ...raw,
+          customerId: raw.customerId ?? null,
+          tasks: raw.tasks ?? [],
+          documents: raw.documents ?? [],
+          rfqs: raw.rfqs ?? [],
+          salesOrders: raw.salesOrders ?? [],
+          purchaseOrders: raw.purchaseOrders ?? [],
+          progress: raw.progress ?? 0,
+        } as Project;
+
+        setProject(normalized);
       } catch (err: any) {
         setError(err.message || "Erreur lors du chargement du projet");
         console.error("Error fetching project:", err);
@@ -304,7 +313,7 @@ const ProjectDetails = () => {
               <span className="font-mono font-medium">{project.code}</span>
               <span>•</span>
               <Building2 className="h-4 w-4" />
-              <span>{project.customer.name}</span>
+              <span>{project.customer?.name || "Client inconnu"}</span>
             </p>
           </div>
           <div className="flex gap-2">
@@ -782,24 +791,24 @@ const ProjectDetails = () => {
                     <Building2 className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm">{project.customer.name}</h4>
-                    <p className="text-xs text-muted-foreground truncate">{project.customer.email}</p>
-                    <p className="text-xs text-muted-foreground">{project.customer.phone}</p>
+                    <h4 className="font-semibold text-sm">{project.customer?.name || "Client inconnu"}</h4>
+                    <p className="text-xs text-muted-foreground truncate">{project.customer?.email || ""}</p>
+                    <p className="text-xs text-muted-foreground">{project.customer?.phone || ""}</p>
                   </div>
                 </div>
                 <Separator />
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Type</span>
-                    <span className="font-medium">{project.customer.customerType}</span>
+                    <span className="font-medium">{project.customer?.customerType || ""}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Ville</span>
-                    <span className="font-medium">{project.customer.city}</span>
+                    <span className="font-medium">{project.customer?.city || ""}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Pays</span>
-                    <span className="font-medium">{project.customer.country}</span>
+                    <span className="font-medium">{project.customer?.country || ""}</span>
                   </div>
                 </div>
               </CardContent>

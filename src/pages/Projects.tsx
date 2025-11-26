@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import { LoadingState } from "@/components/ui/loading-spinner";
 import { ErrorState } from "@/components/ui/error-state";
-import { mockProjects } from "@/data/mockData";
+import { fetchProjects, createProject, deleteProject, updateProjectStatus } from "@/api/projects";
 import {
   DndContext,
   DragEndEvent,
@@ -48,18 +48,27 @@ const Projects = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
 
-  // Fetch projects from mock data
+  // Formulaire de création de projet
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newCustomerId, setNewCustomerId] = useState<string>("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
+  const [newBudget, setNewBudget] = useState<string>("");
+  const [newPriority, setNewPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "">("");
+
+  // Fetch projects from API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setProjectsData(mockProjects);
-        setCustomers(mockProjects.map(p => p.customer));
+
+        const apiProjects = await fetchProjects();
+        setProjectsData(apiProjects);
+
+        // TODO: remplacer par un vrai appel API clients quand disponible
+        setCustomers([]);
       } catch (err: any) {
         setError(err.message || "Erreur lors du chargement des projets");
         toast({
@@ -99,15 +108,15 @@ const Projects = () => {
     const newStatus = over.id as string;
 
     if (activeProject && activeProject.status !== newStatus) {
-      // Optimistic update for mock data
-      setProjectsData(prev => 
-        prev.map(project => 
-          project.id.toString() === active.id 
+      // Mise à jour optimiste locale uniquement (sans appel API pour l'instant)
+      setProjectsData(prev =>
+        prev.map(project =>
+          project.id.toString() === active.id
             ? { ...project, status: newStatus }
             : project
         )
       );
-      
+
       toast({
         title: "Statut mis à jour",
         description: `Le projet a été déplacé vers "${newStatus}"`,
@@ -124,12 +133,75 @@ const Projects = () => {
   const handleDeleteProject = async (projectId: string | number) => {
     if (!confirm("Êtes-vous sûr de vouloir supprimer ce projet ?")) return;
 
-    // Mock deletion
+    const previous = projectsData;
+
+    // Suppression optimiste
     setProjectsData(prev => prev.filter(p => p.id !== projectId));
-    toast({
-      title: "Projet supprimé",
-      description: "Le projet a été supprimé avec succès",
-    });
+
+    try {
+      await deleteProject(projectId);
+      toast({
+        title: "Projet supprimé",
+        description: "Le projet a été supprimé avec succès",
+      });
+    } catch (err: any) {
+      // rollback en cas d'erreur
+      setProjectsData(previous);
+      toast({
+        title: "Erreur",
+        description: err?.message || "Impossible de supprimer le projet.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const resetCreateForm = () => {
+    setNewTitle("");
+    setNewDescription("");
+    setNewCustomerId("");
+    setNewStartDate("");
+    setNewEndDate("");
+    setNewBudget("");
+    setNewPriority("");
+  };
+
+  const handleCreateProject = async () => {
+    if (!newTitle.trim()) {
+      toast({
+        title: "Champs manquants",
+        description: "Merci de renseigner au minimum le titre du projet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const created = await createProject({
+        title: newTitle,
+        description: newDescription,
+        customerId: newCustomerId ? Number(newCustomerId) : null,
+        status: "PENDING",
+        startDate: newStartDate,
+        endDate: newEndDate || null,
+        budget: Number(newBudget),
+        priority: newPriority || "MEDIUM",
+        managerId: null,
+      });
+
+      setProjectsData(prev => [created, ...prev]);
+      toast({
+        title: "Projet créé",
+        description: `Le projet "${created.title}" a été créé avec succès.`,
+      });
+      resetCreateForm();
+      setIsCreateModalOpen(false);
+    } catch (err: any) {
+      toast({
+        title: "Erreur",
+        description: err?.message || "Impossible de créer le projet.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Filter projects based on search and filters
@@ -250,67 +322,87 @@ const Projects = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="project-title">Titre du projet</Label>
-                      <Input id="project-title" placeholder="Nom du projet" />
+                      <Input
+                        id="project-title"
+                        placeholder="Nom du projet"
+                        value={newTitle}
+                        onChange={(e) => setNewTitle(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="project-client">Client</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un client" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers.map(customer => (
-                            <SelectItem key={customer.id} value={customer.id.toString()}>
-                              {customer.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="project-client">Client (ID)</Label>
+                      <Input
+                        id="project-client"
+                        type="number"
+                        placeholder="ID client (optionnel)"
+                        value={newCustomerId}
+                        onChange={(e) => setNewCustomerId(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="start-date">Date de début</Label>
-                      <Input id="start-date" type="date" />
+                      <Input
+                        id="start-date"
+                        type="date"
+                        value={newStartDate}
+                        onChange={(e) => setNewStartDate(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="end-date">Date d'échéance</Label>
-                      <Input id="end-date" type="date" />
+                      <Input
+                        id="end-date"
+                        type="date"
+                        value={newEndDate}
+                        onChange={(e) => setNewEndDate(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="priority">Priorité</Label>
-                      <Select>
+                      <Select
+                        value={newPriority || undefined}
+                        onValueChange={(value) => setNewPriority(value as any)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="HIGH">Haute</SelectItem>
-                          <SelectItem value="MEDIUM">Moyenne</SelectItem>
                           <SelectItem value="LOW">Basse</SelectItem>
+                          <SelectItem value="MEDIUM">Moyenne</SelectItem>
+                          <SelectItem value="HIGH">Haute</SelectItem>
+                          <SelectItem value="CRITICAL">Critique</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="budget">Budget</Label>
-                      <Input id="budget" type="number" placeholder="50000" />
+                      <Input
+                        id="budget"
+                        type="number"
+                        placeholder="50000"
+                        value={newBudget}
+                        onChange={(e) => setNewBudget(e.target.value)}
+                      />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="description">Description</Label>
-                    <Textarea id="description" placeholder="Description du projet..." rows={4} />
+                    <Textarea
+                      id="description"
+                      placeholder="Description du projet..."
+                      rows={4}
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                    />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Annuler</Button>
-                  <Button onClick={() => {
-                    setIsCreateModalOpen(false);
-                    toast({
-                      title: "Projet créé",
-                      description: "Le projet a été créé avec succès",
-                    });
-                  }}>Créer le projet</Button>
+                  <Button onClick={handleCreateProject}>Créer le projet</Button>
                 </DialogFooter>
                 </DialogContent>
               </Dialog>

@@ -7,9 +7,9 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
-  const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+  const isAuthenticated = typeof window !== "undefined" ? localStorage.getItem("isAuthenticated") === "true" : false;
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 

@@ -22,35 +22,39 @@ export interface User {
   updatedAt: string;
 }
 
-// La vraie réponse de /auth/login devra être ajustée selon ton backend.
-// On suppose qu'elle renvoie au moins un token JWT ou similaire.
+// Réponse réelle de /auth/login : { user: User, token: { type, token, ... } }
 interface LoginResponse {
-  token: string;
   user: User;
+  token: {
+    type: string;
+    name: string | null;
+    token: string;
+    abilities: string[];
+    lastUsedAt: string | null;
+    expiresAt: string | null;
+  };
 }
 
 export async function login(payload: LoginPayload): Promise<User> {
   const data = await apiClient.post<LoginResponse>("/auth/login", payload);
 
-  // Stocker le token pour les appels suivants
-  localStorage.setItem("authToken", data.token);
+  // Stocker le token pour les appels suivants et marquer l'authentification
+  localStorage.setItem("authToken", data.token.token);
+  localStorage.setItem("isAuthenticated", "true");
 
   return data.user;
 }
 
 export async function getCurrentUser(): Promise<User> {
-  const token = localStorage.getItem("authToken") || "";
-
-  // La doc montre un body { token: "..." } pour /auth/me.
-  // On utilise POST pour maximiser la compatibilité, tout en gardant
-  // le header Bearer ajouté automatiquement par apiClient.
-  return apiClient.post<User>("/auth/me", { token });
+  // On utilise GET /auth/me avec le header Authorization Bearer déjà
+  // ou les cookies de session ajoutés automatiquement par apiClient.
+  return apiClient.get<User>("/auth/me");
 }
 
 export async function logout(): Promise<void> {
   try {
     await apiClient.post("/auth/logout");
   } finally {
-    localStorage.removeItem("authToken");
+    localStorage.removeItem("isAuthenticated");
   }
 }

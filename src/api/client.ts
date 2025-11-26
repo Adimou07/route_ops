@@ -6,7 +6,7 @@ async function request<T>(
   path: string,
   options: RequestInit & { method?: HttpMethod } = {}
 ): Promise<T> {
-  const token = localStorage.getItem("authToken");
+  const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -21,6 +21,7 @@ async function request<T>(
     ...options,
     method: options.method || "GET",
     headers,
+    credentials: "include",
   });
 
   if (!response.ok) {
