@@ -39,8 +39,9 @@ interface ProjectSingleResponse {
   message?: string;
 }
 
-export async function fetchProjects(): Promise<ProjectsListResponse> {
-  return apiClient.get<ProjectsListResponse>("/projects");
+export async function fetchProjects(page: number = 1): Promise<ProjectsListResponse> {
+  const path = page && page !== 1 ? `/projects?page=${page}` : "/projects";
+  return apiClient.get<ProjectsListResponse>(path);
 }
 
 export async function fetchProjectById(id: number | string): Promise<Project> {

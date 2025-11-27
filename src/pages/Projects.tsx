@@ -232,6 +232,20 @@ const Projects = () => {
       return;
     }
 
+    // Validation simple des dates : la date de fin doit être après la date de début
+    if (newStartDate && newEndDate) {
+      const start = new Date(newStartDate);
+      const end = new Date(newEndDate);
+      if (end < start) {
+        toast({
+          title: "Dates invalides",
+          description: "La date de fin doit être postérieure à la date de début.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     try {
       const payload: any = {
         title: newTitle,

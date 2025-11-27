@@ -144,7 +144,8 @@ const Tasks = () => {
               </p>
             </div>
             <Button
-              className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-200"
+              className="gap-2 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all durée-200"
+              onClick={() => navigate("/tasks/new")}
             >
               <Plus className="h-4 w-4" />
               Nouvelle tâche

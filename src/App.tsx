@@ -9,6 +9,7 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import ProjectEdit from "./pages/ProjectEdit";
 import Tasks from "./pages/Tasks";
+import TaskCreate from "./pages/TaskCreate";
 import RFQ from "./pages/RFQ";
 import RFQDetails from "./pages/RFQDetails";
 import SalesOrders from "./pages/SalesOrders";
@@ -70,6 +71,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks/new"
+            element={
+              <ProtectedRoute>
+                <TaskCreate />
               </ProtectedRoute>
             }
           />

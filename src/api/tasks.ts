@@ -81,7 +81,9 @@ export async function fetchTaskById(id: number | string): Promise<Task> {
   return apiClient.get<Task>(`/tasks/${id}`);
 }
 
-export async function createTask(input: Omit<Task, "id" | "code" | "createdBy" | "createdAt" | "updatedAt">): Promise<Task> {
+export async function createTask(
+  input: Partial<Pick<Task, "title" | "description" | "status" | "priority" | "dueDate" | "projectId" | "assignedTo">>
+): Promise<Task> {
   const res = await apiClient.post<TaskSingleResponse>("/tasks", input);
   return res.data;
 }
