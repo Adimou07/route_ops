@@ -29,6 +29,9 @@ const Tasks = () => {
   const [lastPage, setLastPage] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
   useEffect(() => {
     const load = async () => {
@@ -92,6 +95,26 @@ const Tasks = () => {
       day: 'numeric'
     });
   };
+
+  const filteredTasks = tasks.filter((task) => {
+    const q = searchQuery.toLowerCase();
+
+    const matchesSearch =
+      q === "" ||
+      task.title?.toLowerCase().includes(q) ||
+      task.code?.toLowerCase().includes(q) ||
+      task.project?.title?.toLowerCase().includes(q) ||
+      task.project?.code?.toLowerCase().includes(q) ||
+      (task.assignee && `${task.assignee.firstname} ${task.assignee.lastname}`.toLowerCase().includes(q));
+
+    const matchesStatus =
+      statusFilter === "all" || task.status === statusFilter;
+
+    const matchesPriority =
+      priorityFilter === "all" || task.priority === priorityFilter;
+
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   if (loading) {
     return (
@@ -163,7 +186,7 @@ const Tasks = () => {
                 </CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap">
-                <Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Statut" />
                   </SelectTrigger>
@@ -174,7 +197,7 @@ const Tasks = () => {
                     <SelectItem value="DONE">Terminé</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select>
+                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Priorité" />
                   </SelectTrigger>
@@ -187,7 +210,12 @@ const Tasks = () => {
                 </Select>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Rechercher..." className="pl-9 w-64" />
+                  <Input
+                    placeholder="Rechercher..."
+                    className="pl-9 w-64"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
@@ -207,7 +235,7 @@ const Tasks = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task) => (
+                {filteredTasks.map((task) => (
                   <TableRow
                     key={task.id}
                     className="hover:bg-muted/60 hover:border-l-4 hover:border-primary/70 transition-colors cursor-pointer"
