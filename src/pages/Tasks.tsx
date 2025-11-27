@@ -14,43 +14,58 @@ import {
 } from "@/components/ui/table";
 import { useNavigate } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEffect, useState } from "react";
+import { toast } from "@/hooks/use-toast";
+import { LoadingState } from "@/components/ui/loading-spinner";
+import { ErrorState } from "@/components/ui/error-state";
+import { fetchTasks, Task } from "@/api/tasks";
 
 const Tasks = () => {
   const navigate = useNavigate();
 
-  // Mock data - in production, fetch all tasks from all projects
-  const tasks = [
-    { 
-      id: "TASK-001", 
-      code: "TASK-00001",
-      title: "Infrastructure Assessment", 
-      project: { code: "PROJ-00001", title: "IT Infrastructure Upgrade" }, 
-      assignee: "Non assigné", 
-      priority: "HIGH", 
-      status: "DONE",
-      dueDate: "2025-11-07"
-    },
-    { 
-      id: "TASK-002", 
-      code: "TASK-00002",
-      title: "Hardware Procurement", 
-      project: { code: "PROJ-00001", title: "IT Infrastructure Upgrade" }, 
-      assignee: "Non assigné", 
-      priority: "HIGH", 
-      status: "IN_PROGRESS",
-      dueDate: "2025-11-22"
-    },
-    { 
-      id: "TASK-003", 
-      code: "TASK-00003",
-      title: "Network Configuration", 
-      project: { code: "PROJ-00001", title: "IT Infrastructure Upgrade" }, 
-      assignee: "Non assigné", 
-      priority: "MEDIUM", 
-      status: "TODO",
-      dueDate: "2025-12-01"
-    },
-  ];
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [totalTasks, setTotalTasks] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [lastPage, setLastPage] = useState<number>(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetchTasks(currentPage);
+        setTasks(res.data);
+        setTotalTasks(res.meta.total);
+        setLastPage(res.meta.lastPage);
+      } catch (err: any) {
+        const message = err?.message || "Impossible de charger les tâches";
+        setError(message);
+        toast({
+          title: "Erreur",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [currentPage]);
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < lastPage) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
 
   const getStatusVariant = (status: string) => {
     switch(status) {
@@ -77,6 +92,29 @@ const Tasks = () => {
       day: 'numeric'
     });
   };
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div className="p-8">
+          <LoadingState message="Chargement des tâches..." />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="p-8">
+          <ErrorState
+            message={error}
+            onRetry={() => window.location.reload()}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -119,7 +157,9 @@ const Tasks = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <CardTitle>Liste des tâches</CardTitle>
-                <CardDescription>{tasks.length} tâche{tasks.length > 1 ? 's' : ''} au total</CardDescription>
+                <CardDescription>
+                  {(totalTasks ?? tasks.length)} tâche{(totalTasks ?? tasks.length) > 1 ? 's' : ''} au total
+                </CardDescription>
               </div>
               <div className="flex gap-2 flex-wrap">
                 <Select>
@@ -179,12 +219,20 @@ const Tasks = () => {
                     </TableCell>
                     <TableCell>
                       <div>
-                        <p className="font-medium text-sm">{task.project.title}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{task.project.code}</p>
+                        <p className="font-medium text-sm">
+                          {task.project?.title ?? `Projet #${task.projectId}`}
+                        </p>
+                        {task.project?.code && (
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {task.project.code}
+                          </p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {task.assignee}
+                      {task.assignee
+                        ? `${task.assignee.firstname} ${task.assignee.lastname}`
+                        : "Non assigné"}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -212,7 +260,7 @@ const Tasks = () => {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => navigate(`/projects/${task.project.code.split('-')[1]}`)}
+                        onClick={() => navigate(`/projects/${task.projectId}`)}
                       >
                         Voir projet
                       </Button>
@@ -221,6 +269,29 @@ const Tasks = () => {
                 ))}
               </TableBody>
             </Table>
+            <div className="flex items-center justify-between mt-4">
+              <span className="text-xs text-muted-foreground">
+                Page {currentPage} sur {lastPage}
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleNextPage}
+                  disabled={currentPage === lastPage}
+                >
+                  Suivant
+                </Button>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

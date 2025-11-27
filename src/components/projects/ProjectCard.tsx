@@ -22,9 +22,10 @@ interface ProjectCardProps {
   project: any;
   getPriorityColor: (priority: string) => string;
   onViewProject: (id: string | number) => void;
+  onEditProject: (id: string | number) => void;
 }
 
-export const ProjectCard = ({ project, getPriorityColor, onViewProject }: ProjectCardProps) => {
+export const ProjectCard = ({ project, getPriorityColor, onViewProject, onEditProject }: ProjectCardProps) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: project.id.toString(),
   });
@@ -91,7 +92,10 @@ export const ProjectCard = ({ project, getPriorityColor, onViewProject }: Projec
             variant="ghost" 
             size="sm" 
             className="h-8 flex-1 min-w-[90px] justify-center text-xs px-2"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditProject(project.id);
+            }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <Edit className="h-3 w-3 mr-1" />

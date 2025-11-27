@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Package, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { login } from "@/api/auth";
+import { connect } from "http2";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Auth = () => {
     try {
       await login({ email, password });
       toast.success("Connexion réussie");
-      navigate("/");
+      navigate("/"); 
     } catch (err: any) {
       const message = err?.message || "Échec de la connexion";
       toast.error(message);

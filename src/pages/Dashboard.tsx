@@ -20,6 +20,7 @@ const Dashboard = () => {
     const fetchUser = async () => {
       try {
         const user = await getCurrentUser();
+        console.log("[Dashboard] getCurrentUser response:", user);
         setCurrentUser(user);
       } catch {
         // en cas d'erreur, on n'affiche simplement pas le bloc utilisateur
@@ -61,7 +62,6 @@ const Dashboard = () => {
                   {currentUser && (
                     <div className="mt-3 inline-flex items-center gap-3 rounded-full bg-white/10 px-3 py-1.5 border border-primary/40 shadow-sm">
                       <div className="h-8 w-8 rounded-full bg-primary-foreground text-primary flex items-center justify-center text-xs font-semibold uppercase">
-                        {`${currentUser.firstname?.[0] || ""}${currentUser.lastname?.[0] || ""}`}
                       </div>
                       <div className="text-xs leading-tight text-primary-foreground/90">
                         <div className="font-semibold">

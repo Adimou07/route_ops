@@ -17,8 +17,20 @@ export interface Project {
   updatedAt: string;
 }
 
+interface ProjectsListResponseMeta {
+  total: number;
+  perPage: number;
+  currentPage: number;
+  lastPage: number;
+  firstPage: number;
+  firstPageUrl: string | null;
+  lastPageUrl: string | null;
+  nextPageUrl: string | null;
+  previousPageUrl: string | null;
+}
+
 interface ProjectsListResponse {
-  meta?: unknown;
+  meta: ProjectsListResponseMeta;
   data: Project[];
 }
 
@@ -27,14 +39,13 @@ interface ProjectSingleResponse {
   message?: string;
 }
 
-export async function fetchProjects(): Promise<Project[]> {
-  const res = await apiClient.get<ProjectsListResponse>("/projects");
-  return res.data;
+export async function fetchProjects(): Promise<ProjectsListResponse> {
+  return apiClient.get<ProjectsListResponse>("/projects");
 }
 
 export async function fetchProjectById(id: number | string): Promise<Project> {
-  const res = await apiClient.get<ProjectSingleResponse>(`/projects/${id}`);
-  return res.data;
+  // L'endpoint GET /projects/{id} renvoie directement un objet Project (sans enveloppe data)
+  return apiClient.get<Project>(`/projects/${id}`);
 }
 
 export async function createProject(input: Omit<Project, "id" | "code" | "createdBy" | "createdAt" | "updatedAt">): Promise<Project> {
@@ -48,5 +59,13 @@ export async function deleteProject(id: number | string): Promise<void> {
 
 export async function updateProjectStatus(id: number | string, status: Project["status"]): Promise<Project> {
   const res = await apiClient.patch<ProjectSingleResponse>(`/projects/${id}/status`, { status });
+  return res.data;
+}
+
+export async function updateProject(
+  id: number | string,
+  input: Partial<Omit<Project, "id" | "code" | "createdBy" | "createdAt" | "updatedAt" | "managerId">>
+): Promise<Project> {
+  const res = await apiClient.put<ProjectSingleResponse>(`/projects/${id}`, input);
   return res.data;
 }

@@ -46,9 +46,9 @@ export async function login(payload: LoginPayload): Promise<User> {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  // On utilise GET /auth/me avec le header Authorization Bearer déjà
-  // ou les cookies de session ajoutés automatiquement par apiClient.
-  return apiClient.get<User>("/auth/me");
+  // L'API renvoie { user: User } sur /auth/me
+  const res = await apiClient.get<{ user: User }>("/auth/me");
+  return res.user;
 }
 
 export async function logout(): Promise<void> {

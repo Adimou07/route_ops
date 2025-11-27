@@ -7,6 +7,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
+import ProjectEdit from "./pages/ProjectEdit";
 import Tasks from "./pages/Tasks";
 import RFQ from "./pages/RFQ";
 import RFQDetails from "./pages/RFQDetails";
@@ -53,6 +54,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <ProjectDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:id/edit"
+            element={
+              <ProtectedRoute>
+                <ProjectEdit />
               </ProtectedRoute>
             }
           />

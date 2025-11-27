@@ -20,9 +20,10 @@ interface KanbanColumnProps {
   title: string;
   projects: any[];
   onViewProject: (id: string | number) => void;
+  onEditProject: (id: string | number) => void;
 }
 
-export const KanbanColumn = ({ title, projects, onViewProject }: KanbanColumnProps) => {
+export const KanbanColumn = ({ title, projects, onViewProject, onEditProject }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({
     id: title,
   });
@@ -54,6 +55,7 @@ export const KanbanColumn = ({ title, projects, onViewProject }: KanbanColumnPro
             project={project}
             getPriorityColor={getPriorityColor}
             onViewProject={onViewProject}
+            onEditProject={onEditProject}
           />
         ))}
         {projects.length === 0 && (

@@ -41,6 +41,7 @@ const Projects = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [projectsData, setProjectsData] = useState<any[]>([]);
+  const [totalProjects, setTotalProjects] = useState<number | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -57,15 +58,39 @@ const Projects = () => {
   const [newBudget, setNewBudget] = useState<string>("");
   const [newPriority, setNewPriority] = useState<"LOW" | "MEDIUM" | "HIGH" | "CRITICAL" | "">("");
 
-  // Fetch projects from API
+  // Suppression (confirmation UI)
+  const [projectToDelete, setProjectToDelete] = useState<any | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Fetch projects from API (avec un léger timeout de 100 ms)
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const apiProjects = await fetchProjects();
-        setProjectsData(apiProjects);
+        const response = await fetchProjects();
+        const apiProjects = response.data;
+
+        // Appliquer les statuts surchargés stockés en localStorage (persistance côté front)
+        const overridesRaw = localStorage.getItem("projectStatusOverrides");
+        let overrides: Record<string, string> = {};
+        if (overridesRaw) {
+          try {
+            overrides = JSON.parse(overridesRaw);
+          } catch {
+            overrides = {};
+          }
+        }
+
+        const projectsWithOverrides = apiProjects.map((project: any) => {
+          const override = overrides[project.id.toString()];
+          return override ? { ...project, status: override } : project;
+        });
+
+        setProjectsData(projectsWithOverrides);
+        setTotalProjects(response.meta.total);
 
         // TODO: remplacer par un vrai appel API clients quand disponible
         setCustomers([]);
@@ -81,7 +106,11 @@ const Projects = () => {
       }
     };
 
-    fetchData();
+    const timeoutId = setTimeout(() => {
+      fetchData();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const sensors = useSensors(
@@ -108,7 +137,7 @@ const Projects = () => {
     const newStatus = over.id as string;
 
     if (activeProject && activeProject.status !== newStatus) {
-      // Mise à jour optimiste locale uniquement (sans appel API pour l'instant)
+      // Mise à jour locale uniquement : le projet reste dans la nouvelle colonne
       setProjectsData(prev =>
         prev.map(project =>
           project.id.toString() === active.id
@@ -116,6 +145,19 @@ const Projects = () => {
             : project
         )
       );
+
+      // Sauvegarder l'override dans localStorage pour persister après rafraîchissement
+      const overridesRaw = localStorage.getItem("projectStatusOverrides");
+      let overrides: Record<string, string> = {};
+      if (overridesRaw) {
+        try {
+          overrides = JSON.parse(overridesRaw);
+        } catch {
+          overrides = {};
+        }
+      }
+      overrides[activeProject.id.toString()] = newStatus;
+      localStorage.setItem("projectStatusOverrides", JSON.stringify(overrides));
 
       toast({
         title: "Statut mis à jour",
@@ -130,19 +172,30 @@ const Projects = () => {
     navigate(`/projects/${projectId}`);
   };
 
-  const handleDeleteProject = async (projectId: string | number) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce projet ?")) return;
+  const handleEditProject = (projectId: string | number) => {
+    navigate(`/projects/${projectId}/edit`);
+  };
 
+  const openDeleteDialog = (project: any) => {
+    setProjectToDelete(project);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteProject = async () => {
+    if (!projectToDelete || isDeleting) return;
+
+    const projectId = projectToDelete.id;
     const previous = projectsData;
 
     // Suppression optimiste
     setProjectsData(prev => prev.filter(p => p.id !== projectId));
 
     try {
+      setIsDeleting(true);
       await deleteProject(projectId);
       toast({
         title: "Projet supprimé",
-        description: "Le projet a été supprimé avec succès",
+        description: `Le projet "${projectToDelete.title}" a été supprimé avec succès`,
       });
     } catch (err: any) {
       // rollback en cas d'erreur
@@ -152,6 +205,10 @@ const Projects = () => {
         description: err?.message || "Impossible de supprimer le projet.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setProjectToDelete(null);
     }
   };
 
@@ -176,17 +233,22 @@ const Projects = () => {
     }
 
     try {
-      const created = await createProject({
+      const payload: any = {
         title: newTitle,
         description: newDescription,
-        customerId: newCustomerId ? Number(newCustomerId) : null,
         status: "PENDING",
         startDate: newStartDate,
         endDate: newEndDate || null,
-        budget: Number(newBudget),
+        budget: Number(newBudget) || 0,
         priority: newPriority || "MEDIUM",
         managerId: null,
-      });
+      };
+
+      if (newCustomerId && newCustomerId.trim() !== "") {
+        payload.customerId = Number(newCustomerId);
+      }
+
+      const created = await createProject(payload);
 
       setProjectsData(prev => [created, ...prev]);
       toast({
@@ -196,9 +258,32 @@ const Projects = () => {
       resetCreateForm();
       setIsCreateModalOpen(false);
     } catch (err: any) {
+      const message = err?.message || "Impossible de créer le projet.";
+
+      // Cas particulier: le backend crée quand même le projet mais échoue sur le preload customer
+      if (message.includes('Cannot preload "customer", value of "Project.customerId" is undefined')) {
+        // On recharge simplement la liste des projets, sans montrer une erreur bloquante
+        try {
+          const refreshed = await fetchProjects();
+          setProjectsData(refreshed.data);
+          setTotalProjects(refreshed.meta.total);
+        } catch {
+          // ignore, on garde la liste actuelle
+        }
+
+        toast({
+          title: "Projet créé",
+          description: "Le projet a été créé avec succès.",
+        });
+
+        resetCreateForm();
+        setIsCreateModalOpen(false);
+        return;
+      }
+
       toast({
         title: "Erreur",
-        description: err?.message || "Impossible de créer le projet.",
+        description: message,
         variant: "destructive",
       });
     }
@@ -218,7 +303,7 @@ const Projects = () => {
   });
 
   const stats = [
-    { label: "Total Projets", value: projectsData.length.toString(), icon: FolderOpen, color: "primary" },
+    { label: "Total Projets", value: (totalProjects ?? projectsData.length).toString(), icon: FolderOpen, color: "primary" },
     { label: "Actifs", value: projectsData.filter(p => p.status === "ACTIVE").length.toString(), icon: CheckCircle, color: "success" },
     { label: "En Attente", value: projectsData.filter(p => p.status === "PENDING").length.toString(), icon: Clock, color: "warning" },
     { label: "Complétés", value: projectsData.filter(p => p.status === "COMPLETED").length.toString(), icon: TrendingUp, color: "info" },
@@ -573,14 +658,14 @@ const Projects = () => {
                               <Button variant="ghost" size="sm" onClick={() => handleViewProject(project.id)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" onClick={() => handleEditProject(project.id)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteProject(project.id)}
+                                onClick={() => openDeleteDialog(project)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -605,6 +690,7 @@ const Projects = () => {
                       title={status}
                       projects={projects}
                       onViewProject={handleViewProject}
+                      onEditProject={handleEditProject}
                     />
                   ))}
                 </div>
@@ -614,6 +700,7 @@ const Projects = () => {
                       project={filteredProjects.find(p => p.id.toString() === activeId)!}
                       getPriorityColor={getPriorityColor}
                       onViewProject={handleViewProject}
+                      onEditProject={handleEditProject}
                     />
                   ) : null}
                 </DragOverlay>
@@ -621,6 +708,49 @@ const Projects = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Dialog de confirmation de suppression */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+          if (!open && !isDeleting) {
+            setIsDeleteDialogOpen(false);
+            setProjectToDelete(null);
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Supprimer le projet</DialogTitle>
+              <DialogDescription>
+                Cette action est <span className="font-semibold">irréversible</span>.
+                <br />
+                Voulez-vous vraiment supprimer le projet
+                {" "}
+                <span className="font-semibold">
+                  "{projectToDelete?.title ?? "ce projet"}"
+                </span>
+                ?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  if (isDeleting) return;
+                  setIsDeleteDialogOpen(false);
+                  setProjectToDelete(null);
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteProject}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Suppression..." : "Supprimer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

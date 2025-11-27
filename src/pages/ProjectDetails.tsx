@@ -50,7 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LoadingState } from "@/components/ui/loading-spinner";
 import { ErrorState } from "@/components/ui/error-state";
-import { fetchProjectById } from "@/api/projects";
+import { fetchProjectById, deleteProject } from "@/api/projects";
 
 interface Task {
   id: number;
@@ -162,6 +162,30 @@ const ProjectDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewAllTasks, setViewAllTasks] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const handleDeleteProject = async () => {
+    if (!project || deleting) return;
+    try {
+      setDeleting(true);
+      await deleteProject(project.id);
+      toast({
+        title: "Projet supprimé",
+        description: "Le projet a été supprimé avec succès.",
+      });
+      navigate("/projects");
+    } catch (err: any) {
+      toast({
+        title: "Erreur",
+        description: err?.message || "Impossible de supprimer le projet.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   // Fetch project data from API
   useEffect(() => {
@@ -172,6 +196,11 @@ const ProjectDetails = () => {
         if (!id) return;
 
         const raw: any = await fetchProjectById(id);
+
+        if (!raw) {
+          throw new Error("Projet introuvable");
+        }
+
         const normalized: Project = {
           ...raw,
           customerId: raw.customerId ?? null,
@@ -321,10 +350,53 @@ const ProjectDetails = () => {
               <Edit className="h-4 w-4 mr-2" />
               Modifier
             </Button>
-            <Button variant="outline" className="text-destructive hover:text-destructive">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Supprimer
-            </Button>
+            <Dialog open={isDeleteDialogOpen} onOpenChange={(open) => {
+              if (!open && !deleting) {
+                setIsDeleteDialogOpen(false);
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  disabled={deleting}
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Supprimer le projet</DialogTitle>
+                  <DialogDescription>
+                    Cette action est <span className="font-semibold">irréversible</span>.
+                    <br />
+                    Voulez-vous vraiment supprimer le projet
+                    {" "}
+                    <span className="font-semibold">"{project.title}"</span> ?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (deleting) return;
+                      setIsDeleteDialogOpen(false);
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleDeleteProject}
+                    disabled={deleting}
+                  >
+                    {deleting ? "Suppression..." : "Supprimer"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
